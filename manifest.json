@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Blur",
+  "description": "Blur What You Want",
+  "version": "0.1.0",
+  "permissions": [],
+  "content_scripts": [
+    {
+      "matches": ["https://www.roblox.com/*"],
+      "js": ["src/injecter.js"],
+      "type": "module",
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "Blur"
+  },
+  "host_permissions": [
+    "https://www.roblox.com/*"
+  ],
+  "web_accessible_resources": [
+  {
+    "resources": ["src/**/*.js"],
+    "matches": ["<all_urls>"]
+  }
+]
+}
