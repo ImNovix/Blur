@@ -1,0 +1,10 @@
+const pageFeatures =[
+  {
+    page: "*",
+    scripts: ["src/pages/all.js"]
+  },
+  {
+    page: "home",
+    scripts: ["src/pages/home.js"]
+  }
+]
