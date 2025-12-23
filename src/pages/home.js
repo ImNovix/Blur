@@ -1,5 +1,5 @@
 import { waitForSelector } from "../helpers/elements.js";
-import { getUserDetails } from "../modules/users.js";
+import { getUserDetails, getUserPresence } from "../modules/users.js";
 import { getUserHeadshot } from "../modules/thumbnails.js";
 
 // prevent running twice
@@ -140,7 +140,9 @@ if (!window.__blurHideFriendsStatusLoaded) {
     if (document.querySelector(".blur-home-header")) return;
 
     const newDiv = document.createElement("div");
-    newDiv.className = "blur-home-header header"; // match CSS
+    newDiv.className = "blur-home-header header";
+
+    const message = "purrr"
 
     newDiv.innerHTML = `
       <img id="profile-image" class="profile-image" src="${headshotURL}" alt="Profile">
@@ -151,7 +153,7 @@ if (!window.__blurHideFriendsStatusLoaded) {
           <img id="verified-badge" class="verified-badge" src="" alt="Verified Badge" style="display: none;">
         </div>
         <h2 id="username">@${userRes.name}</h2>
-        <h3 id="message">Meow</h3>
+        <h3 id="message">${message}</h3>
       </div>
     `;
 
@@ -161,4 +163,6 @@ if (!window.__blurHideFriendsStatusLoaded) {
   // initial runs
   hideFriendsStatus();
   replaceHomeHeader();
+
+  console.log(await getUserPresence())
 }

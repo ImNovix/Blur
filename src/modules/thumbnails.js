@@ -11,3 +11,7 @@ export async function getUserHeadshot(userID = "0", size="150x150", format="Png"
         return res.data[0];
     }
 }
+
+export async function getUniverseIcon(universeID, size="150x150", format="Png", isCircular="false") {
+    return (await fetchRobloxAPI(`https://thumbnails.roblox.com/v1/games/icons?universeIds=${universeID}&size=${size}&format=${format}&isCircular=${isCircular}`)).data[0];
+}
