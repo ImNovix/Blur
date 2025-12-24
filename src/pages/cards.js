@@ -1,6 +1,6 @@
 import { getUserDetails, getUserPresence } from "../modules/users.js";
 import { getUserHeadshot, getUniverseIcon } from "../modules/thumbnails.js";
-import { truncateString } from "../helpers/usefull.js";
+import { truncateString } from "../helpers/useful.js";
 
 export async function makeFriendCardHTML(userID) {
     return `

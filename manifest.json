@@ -9,18 +9,15 @@
       "matches": ["https://www.roblox.com/*"],
       "js": ["src/injecter.js"],
       "type": "module",
-      "run_at": "document_idle"
+      "run_at": "document_start"
     }
   ],
-  "action": {
-    "default_title": "Blur"
-  },
   "host_permissions": [
     "https://www.roblox.com/*"
   ],
   "web_accessible_resources": [
   {
-    "resources": ["src/**/*.js", "local/*.js"],
+    "resources": ["src/**/*.js", "local/*.js", "src/images/*.png", "src/pages/css/*.css"],
     "matches": ["<all_urls>"]
   }
 ]

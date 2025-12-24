@@ -1,65 +1,71 @@
-const AREA = chrome.storage.local;
+export class Storage {
+  constructor(area = chrome.storage.local) {
+    this.area = area;
+    this.DEFAULTS = {
+      hideFriendStatus: false,
+      bestFriends: [],
+    };
+  }
 
-/**
- * Default configuration values
- * Add new keys here and they will auto-initialize
- */
-const DEFAULTS = {
-  hideFriendStatus: false,
-  hideFriendGame: false,
-  blurIntensity: 6
-};
-
-/**
- * Initialize storage with defaults (non-destructive)
- * Safe to call multiple times
- */
-export function initDefaults() {
-  return new Promise(resolve => {
-    AREA.get(null, current => {
-      const toSet = {};
-
-      for (const key in DEFAULTS) {
-        if (!(key in current)) {
-          toSet[key] = DEFAULTS[key];
+  /** Initialize storage with defaults (non-destructive) */
+  initDefaults() {
+    return new Promise(resolve => {
+      this.area.get(null, current => {
+        const toSet = {};
+        for (const key in this.DEFAULTS) {
+          if (!(key in current)) {
+            toSet[key] = this.DEFAULTS[key];
+          }
         }
-      }
-
-      if (Object.keys(toSet).length > 0) {
-        AREA.set(toSet, resolve);
-      } else {
-        resolve();
-      }
+        if (Object.keys(toSet).length > 0) {
+          this.area.set(toSet, resolve);
+        } else {
+          resolve();
+        }
+      });
     });
-  });
-}
+  }
 
-/**
- * Get a value
- */
-export function get(key, fallback = DEFAULTS[key]) {
-  return new Promise(resolve => {
-    AREA.get([key], result => {
-      resolve(result[key] ?? fallback);
+  /** Get a value */
+  get(key, fallback) {
+    if (fallback === undefined) fallback = this.DEFAULTS[key];
+    return new Promise(resolve => {
+      this.area.get([key], result => {
+        resolve(result[key] ?? fallback);
+      });
     });
-  });
-}
+  }
 
-/**
- * Set a value
- */
-export function set(key, value) {
-  return new Promise(resolve => {
-    AREA.set({ [key]: value }, resolve);
-  });
-}
+  /** Set a value */
+  set(key, value) {
+    return new Promise(resolve => {
+      this.area.set({ [key]: value }, resolve);
+    });
+  }
 
-/**
- * Toggle a boolean
- */
-export async function toggle(key) {
-  const current = await get(key);
-  const next = !current;
-  await set(key, next);
-  return next;
+  /** Toggle a boolean */
+  async toggle(key) {
+    const current = await this.get(key);
+    const next = !current;
+    await this.set(key, next);
+    return next;
+  }
+
+  /** Add an item to an array key */
+  async addToArray(key, item) {
+    const arr = await this.get(key, []);
+    if (!arr.includes(item)) {
+      arr.push(item);
+      await this.set(key, arr);
+    }
+    return arr;
+  }
+
+  /** Remove an item from an array key */
+  async removeFromArray(key, item) {
+    const arr = await this.get(key, []);
+    const filtered = arr.filter(i => i !== item);
+    await this.set(key, filtered);
+    return filtered;
+  }
 }
