@@ -1,8 +1,11 @@
 # Blur - Blur What You Want
 Blur is a Roblox extension made to hide things you possibly don't want to see, as well as improve your Roblox experence.
 
+**Made for Chrome Only**
+
 # Features
-- Ignoring users — Acts like blocking a user without actually blocking them.
+- Best Friends
+- Home Greeting
 
 # How to use the extension
 1. Download or clone the Blur extension folder to your computer.
