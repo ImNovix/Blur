@@ -68,4 +68,9 @@ export class Storage {
     await this.set(key, filtered);
     return filtered;
   }
+
+  async containsInArray(key, item) {
+    const arr = await this.get(key, []);
+    return arr.includes(item);
+  }
 }

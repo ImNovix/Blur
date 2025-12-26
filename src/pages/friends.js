@@ -2,11 +2,17 @@ import { waitForSelector } from "../helpers/elements.js";
 import { makeFriendCardHTML } from "./cards.js";
 import { getUserPresence, getUserDetails } from "../modules/users.js";
 import { getUserHeadshot } from "../modules/thumbnails.js";
-import { bestFriends } from "../../local/vars.js";
+import { Storage } from "../helpers/storage.js";
 
 console.log("[pages/friends.js] Loaded");
 
-const extensionURL = await chrome.runtime.getURL('');
+const extensionURL = chrome.runtime.getURL("");
+const storage = new Storage();
+await storage.initDefaults();
+
+/* ----------------------------------------
+ * Helpers
+ * -------------------------------------- */
 
 function getActiveFriendsTab() {
   const hash = location.hash.toLowerCase();
@@ -16,6 +22,16 @@ function getActiveFriendsTab() {
   return null;
 }
 
+// Only select real friend cards (ignore tabs or headers)
+function getRobloxFriendCards() {
+  return Array.from(document.querySelectorAll("#friends-web-app ul > li[id]"))
+    .filter(li => li.querySelector(".avatar-card") || li.querySelector(".thumbnail-2d-container"));
+}
+
+/* ----------------------------------------
+ * Best Friends Section
+ * -------------------------------------- */
+
 let injecting = false;
 
 async function injectBestFriendsSection() {
@@ -23,159 +39,199 @@ async function injectBestFriendsSection() {
   if (injecting) return;
   injecting = true;
 
-  const connectionsSubtitle = await waitForSelector(".friends-subtitle");
-  if (!connectionsSubtitle) {
+  // wait for the friends section container
+  const connectionsSection = await waitForSelector(".friends-content.section");
+  if (!connectionsSection || document.querySelector(".blur-best-friends")) {
     injecting = false;
     return;
   }
 
-  if (document.querySelector(".blur-best-friends")) {
-    injecting = false;
-    return;
-  }
-
-  const connectionsSection = connectionsSubtitle.closest(".friends-content.section");
-  if (!connectionsSection) {
-    injecting = false;
-    return;
-  }
+  const bestFriends = await storage.get("bestFriends", []);
 
   const section = document.createElement("div");
   section.className = "friends-content section blur-best-friends";
   section.innerHTML = `
     <div class="container-header">
-      <h2 class="friends-subtitle">Best Friends (${bestFriends.length})</h2>
+      <h2 class="friends-subtitle">
+        Best Friends (${bestFriends.length})
+      </h2>
     </div>
     <ul class="hlist avatar-cards blur-best-friends-cards"></ul>
   `;
 
+  // now parentNode should exist
   connectionsSection.parentNode.insertBefore(section, connectionsSection);
+
   injecting = false;
 }
+
+/* ----------------------------------------
+ * Best Friend Cards (Custom)
+ * -------------------------------------- */
 
 async function injectBestFriendCards() {
   const list = document.querySelector(".blur-best-friends-cards");
   if (!list) return;
 
-  const existingIds = new Set(Array.from(list.children).map(card => card.id));
-  const cardElements = [];
+  const bestFriends = await storage.get("bestFriends", []);
+  const existing = new Set([...list.children].map(c => c.id));
+  const cardsToPopulate = [];
 
   for (const userId of bestFriends) {
-    if (existingIds.has(String(userId))) continue;
+    if (existing.has(String(userId))) continue;
 
     const html = await makeFriendCardHTML(userId);
-    const wrapper = document.createElement("div");
-    wrapper.innerHTML = html.trim();
-    const card = wrapper.firstElementChild;
-    card.style.position = 'relative';
+    const wrap = document.createElement("div");
+    wrap.innerHTML = html.trim();
 
-    // Top-right button
-    const btn = document.createElement("button");
-    btn.className = "user-options-btn";
+    const card = wrap.firstElementChild;
+    card.id = String(userId);
+    card.style.position = "relative";
 
-    const img = document.createElement("img");
-    img.src = extensionURL + "src/images/more.png";
-    img.alt = "Options";
-    btn.appendChild(img);
-
-    // Dropdown container
-    const dropdown = document.createElement("div");
-    dropdown.className = "user-options-dropdown";
-
-    // Dropdown buttons
-    const option1 = document.createElement("button");
-    option1.className = "user-options-item danger";
-    option1.textContent = "Remove Best Friend";
-
-    option1.addEventListener("click", (e) => {
-      e.stopPropagation();
-      console.log(`Remove Friend clicked for user ${userId}`);
-      dropdown.classList.remove("open");
-    });
-
-    const option2 = document.createElement("button");
-    option2.className = "user-options-item";
-    option2.textContent = "View Profile";
-
-    option2.addEventListener("click", (e) => {
-      e.stopPropagation();
-      console.log(`View Profile clicked for user ${userId}`);
-      dropdown.classList.remove("open");
-    });
-
-    dropdown.append(option1, option2);
-
-    // Append
-    card.appendChild(btn);
-    card.appendChild(dropdown);
-
-    // Toggle dropdown
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      document.querySelectorAll(".user-options-dropdown.open").forEach(d => {
-        if (d !== dropdown) d.classList.remove("open");
-      });
-      dropdown.classList.toggle("open");
-    });
-
-    // Hide on outside click
-    document.addEventListener("click", () => {
-      dropdown.classList.remove("open");
-    });
-
+    injectOptionsMenu(card, userId);
     list.appendChild(card);
-    existingIds.add(String(userId));
-    cardElements.push({ userId, card });
+    existing.add(String(userId));
+    cardsToPopulate.push({ card, userId });
   }
 
-  // Update user info (headshots, presence)
-  await Promise.all(cardElements.map(async ({ userId, card }) => {
-    const headshot = card.querySelector('.thumbnail-2d-container.avatar-card-image img');
-    const displayNameLink = card.querySelector('.avatar-name-container a');
-    const labels = card.querySelectorAll('.avatar-card-label');
-    const avatarStatus = card.querySelector('.avatar-status');
-
-    const usernameLabel = labels[0];
-    const gameLabel = labels[1];
-
-    const [userPresence, userRes, userHeadshot] = await Promise.all([
-      getUserPresence(userId),
-      getUserDetails(userId),
-      getUserHeadshot(userId)
-    ]);
-
-    headshot.src = userHeadshot?.imageUrl || headshot.src;
-    gameLabel.textContent = userPresence?.lastLocation || 'Offline';
-    usernameLabel.textContent = '@' + userRes?.name;
-    displayNameLink.textContent = userRes?.displayName;
-
-    if (userPresence.userPresenceType === 0) {
-      gameLabel.textContent = 'Offline';
-    } else if (userPresence.userPresenceType === 1) {
-      avatarStatus.innerHTML = `<span data-testid="presence-icon" title="Website" class="online icon-online"></span>`;
-      gameLabel.textContent = 'Online';
-    } else if (userPresence.userPresenceType === 2) {
-      avatarStatus.innerHTML = `<span data-testid="presence-icon" title=${userPresence.lastLocation} class="game icon-game"></span>`;
-      gameLabel.innerHTML = `<a href="https://www.roblox.com/games/${userPresence.placeId}" class="avatar-status-link text-link">${userPresence.lastLocation}</a>`;
-    } else if (userPresence.userPresenceType === 3) {
-      avatarStatus.innerHTML = `<span data-testid="presence-icon" title="Studio" class="studio icon-studio"></span>`;
-      gameLabel.textContent = 'Studio';
-    }
-  }));
+  await populateUserData(cardsToPopulate);
 }
+
+/* ----------------------------------------
+ * Roblox Native Card Injection
+ * -------------------------------------- */
+
+async function injectIntoRobloxCards() {
+  for (const card of getRobloxFriendCards()) {
+    if (card.querySelector(".blur-user-options")) continue; // already injected
+    injectOptionsMenu(card, Number(card.id));
+  }
+}
+
+/* ----------------------------------------
+ * Shared Options Menu
+ * -------------------------------------- */
+
+function injectOptionsMenu(card, userId) {
+  if (card.querySelector(".blur-user-options")) return; // avoid duplicates
+  card.style.position ||= "relative";
+
+  const btn = document.createElement("button");
+  btn.className = "user-options-btn blur-user-options";
+
+  const img = document.createElement("img");
+  img.src = extensionURL + "src/images/more.png";
+  img.alt = "Options";
+  btn.appendChild(img);
+
+  const dropdown = document.createElement("div");
+  dropdown.className = "user-options-dropdown";
+
+  (async () => {
+    const isBestFriend = await storage.containsInArray("bestFriends", userId);
+
+    const toggleBtn = document.createElement("button");
+    toggleBtn.className = "user-options-item";
+    toggleBtn.textContent = isBestFriend
+      ? "Remove Best Friend"
+      : "Add to Best Friends";
+
+    toggleBtn.addEventListener("click", async e => {
+      e.stopPropagation();
+      if (isBestFriend) await storage.removeFromArray("bestFriends", userId);
+      else await storage.addToArray("bestFriends", userId);
+
+      dropdown.classList.remove("open");
+
+      // ✅ Update Best Friends row when changes occur
+      await injectBestFriendsSection();
+      await injectBestFriendCards();
+    });
+
+    dropdown.appendChild(toggleBtn);
+  })();
+
+  const profileBtn = document.createElement("button");
+  profileBtn.className = "user-options-item";
+  profileBtn.textContent = "View Profile";
+  profileBtn.addEventListener("click", e => {
+    e.stopPropagation();
+    window.open(`https://www.roblox.com/users/${userId}/profile`, "_blank");
+    dropdown.classList.remove("open");
+  });
+
+  dropdown.appendChild(profileBtn);
+
+  btn.addEventListener("click", e => {
+    e.stopPropagation();
+    document
+      .querySelectorAll(".user-options-dropdown.open")
+      .forEach(d => d !== dropdown && d.classList.remove("open"));
+    dropdown.classList.toggle("open");
+  });
+
+  document.addEventListener("click", () => dropdown.classList.remove("open"));
+
+  card.append(btn, dropdown);
+}
+
+/* ----------------------------------------
+ * Populate Card Data
+ * -------------------------------------- */
+
+async function populateUserData(cards) {
+  await Promise.all(
+    cards.map(async ({ card, userId }) => {
+      const headshot = card.querySelector(".thumbnail-2d-container.avatar-card-image img");
+      const displayNameLink = card.querySelector(".avatar-name-container a");
+      const labels = card.querySelectorAll(".avatar-card-label");
+      const avatarStatus = card.querySelector(".avatar-status");
+
+      const usernameLabel = labels[0];
+      const gameLabel = labels[1];
+
+      const [presence, user, thumb] = await Promise.all([
+        getUserPresence(userId),
+        getUserDetails(userId),
+        getUserHeadshot(userId)
+      ]);
+
+      headshot.src = thumb?.imageUrl || headshot.src;
+      usernameLabel.textContent = "@" + user?.name;
+      displayNameLink.textContent = user?.displayName;
+
+      if (presence.userPresenceType === 0) {
+        gameLabel.textContent = "Offline";
+      } else if (presence.userPresenceType === 1) {
+        avatarStatus.innerHTML = `<span class="online icon-online"></span>`;
+        gameLabel.textContent = "Online";
+      } else if (presence.userPresenceType === 2) {
+        avatarStatus.innerHTML = `<span class="game icon-game"></span>`;
+        gameLabel.innerHTML = `<a class="avatar-status-link text-link"
+          href="https://www.roblox.com/games/${presence.placeId}">
+          ${presence.lastLocation}
+        </a>`;
+      } else {
+        avatarStatus.innerHTML = `<span class="studio icon-studio"></span>`;
+        gameLabel.textContent = "Studio";
+      }
+    })
+  );
+}
+
+/* ----------------------------------------
+ * Observers
+ * -------------------------------------- */
 
 async function ensureInjected() {
   await injectBestFriendsSection();
   await injectBestFriendCards();
+  await injectIntoRobloxCards();
 }
+const body = await waitForNode("body"); // wait for body to exist
 
-const observer = new MutationObserver(() => {
-  if (!document.querySelector(".blur-best-friends")) {
-    ensureInjected();
-  }
-});
-
-observer.observe(document.body, { childList: true, subtree: true });
+const observer = new MutationObserver(ensureInjected);
+observer.observe(body, { childList: true, subtree: true });
 
 // Initial run
 ensureInjected();

@@ -35,14 +35,16 @@ export async function makeFriendCardSmall(userID) {
     const userRes = await getUserDetails(userID);
     const userheadshotURL = (await getUserHeadshot(userID)).imageUrl;
 
+    console.log(userPresence);
+
     let avatarStatus;
     let gameStatus;
 
-    if (userPresence.userPresenceType = 0) {
+    if (userPresence.userPresenceType === 0) {
         // Offline
         avatarStatus = `<div class="avatar-status"></div>`;
         gameStatus = `<div class="friends-carousel-tile-sublabel"></div>`;
-    } else if (userPresence.userPresenceType = 1) {
+    } else if (userPresence.userPresenceType === 1) {
         // Website
         avatarStatus = `
             <div class="avatar-status">
@@ -50,7 +52,7 @@ export async function makeFriendCardSmall(userID) {
             </div>
         `;
         gameStatus = `<div class="friends-carousel-tile-sublabel"></div>`;
-    } else if (userPresence.userPresenceType = 2) {
+    } else if (userPresence.userPresenceType === 2) {
         // In-Game
         const gameTitle = userPresence.lastLocation;
         const shoternGameTitle = truncateString(gameTitle, 15);
@@ -64,7 +66,7 @@ export async function makeFriendCardSmall(userID) {
                 <div class="friends-carousel-tile-experience">${shoternGameTitle}</div>
             </div>
         `;
-    } else if (userPresence.userPresenceType = 3) {
+    } else if (userPresence.userPresenceType === 3) {
         // Studio
         avatarStatus = `
             <div class="avatar-status">
@@ -103,58 +105,52 @@ export async function makeFriendCardSmall(userID) {
 }
 
 export async function makeFriendDropdown(userID) {
-    const userPresence = await getUserPresence(userID);
-    const userRes = await getUserDetails(userID);
+  const userPresence = await getUserPresence(userID);
+  const userRes = await getUserDetails(userID);
 
-    if (userPresence.userPresenceType != 2 && userPresence.placeId != null) {
-        return `
-            <div style="position: absolute; top: 329px; left: 189px; z-index: 1002; width: 240px;">
-                <div class="friend-tile-dropdown">
-                    <ul>
-                        <li>
-                            <button type="button" class="friend-tile-dropdown-button">
-                                <span class="icon-chat-gray"></span> Chat with ${userRes.displayName}
-                            </button>
-                        </li>
-                        <li>
-                            <button type="button" class="friend-tile-dropdown-button">
-                                <span class="icon-viewdetails"></span> View Profile
-                            </button>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        `;
-    } else {
-        const universeIconURL = await getUniverseIcon(userPresence.universeId);
-        return `
-        <div style="position: absolute; top: 342px; left: 43.5px; z-index: 1002; width: 315px;">
-            <div class="friend-tile-dropdown">
-                <div class="in-game-friend-card">
-                    <button type="button" class="friend-tile-non-styled-button">
-                        <span class="thumbnail-2d-container friend-tile-game-card">
-                            <img class="game-card-thumb" src="${universeIconURL}" alt="" title="">
-                        </span>
-                    </button>
-                    <div class="friend-presence-info">
-                        <button type="button" class="friend-tile-non-styled-button">${userPresence.lastLocation}</button>
-                        <button type="button" class="btn-growth-sm btn-full-width">Join</button>
-                    </div>
-                </div>
-                <ul>
-                    <li>
-                        <button type="button" class="friend-tile-dropdown-button">
-                            <span class="icon-chat-gray"></span> Chat with ${userRes.displayName}
-                        </button>
-                    </li>
-                    <li>
-                        <button type="button" class="friend-tile-dropdown-button">
-                            <span class="icon-viewdetails"></span> View Profile
-                        </button>
-                    </li>
-                </ul>
-            </div>
+  if (userPresence.userPresenceType === 0 ) {
+    dropdown.innerHTML = `
+      <ul>
+        <li>
+          <button type="button" class="friend-tile-dropdown-button">
+            <span class="icon-chat-gray"></span> Chat with ${userRes.displayName}
+          </button>
+        </li>
+        <li>
+          <button type="button" class="friend-tile-dropdown-button">
+            <span class="icon-viewdetails"></span> View Profile
+          </button>
+        </li>
+      </ul>
+    `;
+  } else {
+    const universeIconURL = await getUniverseIcon(userPresence.universeId);
+    dropdown.innerHTML = `
+      <div class="in-game-friend-card">
+        <button type="button" class="friend-tile-non-styled-button">
+          <span class="thumbnail-2d-container friend-tile-game-card">
+            <img class="game-card-thumb" src="${universeIconURL}" alt="" title="">
+          </span>
+        </button>
+        <div class="friend-presence-info">
+          <button type="button" class="friend-tile-non-styled-button">${userPresence.lastLocation}</button>
+          <button type="button" class="btn-growth-sm btn-full-width">Join</button>
         </div>
-        `;
-    }
+      </div>
+      <ul>
+        <li>
+          <button type="button" class="friend-tile-dropdown-button">
+            <span class="icon-chat-gray"></span> Chat with ${userRes.displayName}
+          </button>
+        </li>
+        <li>
+          <button type="button" class="friend-tile-dropdown-button">
+            <span class="icon-viewdetails"></span> View Profile
+          </button>
+        </li>
+      </ul>
+    `;
+  }
+
+  return dropdown;
 }

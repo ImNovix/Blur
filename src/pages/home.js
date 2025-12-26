@@ -1,10 +1,15 @@
 import { waitForSelector } from "../helpers/elements.js";
 import { getUserDetails, getUserPresence } from "../modules/users.js";
 import { getUserHeadshot } from "../modules/thumbnails.js";
+import { Storage } from "../helpers/storage.js";
+import { makeFriendCardSmall, makeFriendDropdown } from "./cards.js";
 
 // prevent running twice
 if (!window.__blurHideFriendsStatusLoaded) {
   window.__blurHideFriendsStatusLoaded = true;
+
+  const storage = new Storage();
+  await storage.initDefaults();
 
   /**
    * Inject global CSS for hiding friend status and custom header
@@ -28,7 +33,7 @@ if (!window.__blurHideFriendsStatusLoaded) {
       /* Header container */
       .header {
         display: flex;
-        align-items: center; /* vertically centers text with image */
+        align-items: center;
         padding: 10px;
       }
 
@@ -36,10 +41,8 @@ if (!window.__blurHideFriendsStatusLoaded) {
       .header img.profile-image {
           width: 128px;
           height: 128px;
-          background-color: #303030;
           border-radius: 50%;
-          border: 4px solid transparent;
-          border-color: #4f4f4f;
+          background-color: #484848ff;
       }
 
       /* Text container */
@@ -59,7 +62,7 @@ if (!window.__blurHideFriendsStatusLoaded) {
       .name-row {
           display: flex;
           align-items: center;
-          gap: 6px; /* space between name and badge */
+          gap: 6px;
       }
 
       .header-text h1 {
@@ -77,14 +80,12 @@ if (!window.__blurHideFriendsStatusLoaded) {
           color: #c8c8c8;
       }
 
-      /* Premium badge (image) */
-      .premium-badge {
-          width: 18px;
-          height: 18px;
-          vertical-align: middle;
+      /* Best friends dropdown adjustments */
+      .friend-tile-dropdown {
+        position: absolute;
+        z-index: 1002;
       }
     `;
-
     document.head.appendChild(style);
   }
 
@@ -142,7 +143,7 @@ if (!window.__blurHideFriendsStatusLoaded) {
     const newDiv = document.createElement("div");
     newDiv.className = "blur-home-header header";
 
-    const message = "purrr"
+    const message = "purrr";
 
     newDiv.innerHTML = `
       <img id="profile-image" class="profile-image" src="${headshotURL}" alt="Profile">
@@ -160,9 +161,71 @@ if (!window.__blurHideFriendsStatusLoaded) {
     oldSection.replaceWith(newDiv);
   }
 
-  // initial runs
+  /**
+   * Inject a separate Best Friends row above the main friends carousel
+   */
+  async function injectBestFriendsCarousel() {
+    const outerContainer = await waitForSelector(".friend-carousel-container");
+    if (!outerContainer) return;
+
+    if (document.querySelector(".blur-best-friends-carousel")) return;
+
+    const bestFriends = await storage.get("bestFriends", []);
+    if (!bestFriends.length) return;
+
+    // Create Best Friends carousel wrapper
+    const bestFriendsCarousel = document.createElement("div");
+    bestFriendsCarousel.className = "blur-best-friends-carousel";
+
+    const headerDiv = document.createElement("div");
+    headerDiv.className = "container-header";
+    headerDiv.innerHTML = `<h2>Best Friends (${bestFriends.length})</h2>`;
+    bestFriendsCarousel.appendChild(headerDiv);
+
+    const scrollContainer = document.createElement("div");
+    scrollContainer.className = "friends-carousel-container";
+    const listContainer = document.createElement("div");
+    listContainer.className = "friends-carousel-list-container-not-full";
+    scrollContainer.appendChild(listContainer);
+    bestFriendsCarousel.appendChild(scrollContainer);
+
+    // Insert Best Friends row above main carousel
+    outerContainer.parentElement.insertBefore(bestFriendsCarousel, outerContainer);
+
+    // Populate cards
+    for (const userId of bestFriends) {
+      const cardHTML = await makeFriendCardSmall(userId);
+      const wrap = document.createElement("div");
+      wrap.innerHTML = cardHTML.trim();
+      const card = wrap.firstElementChild;
+      if (!card) continue;
+
+      // Hover dropdown
+      /*
+      card.addEventListener("mouseenter", async () => {
+      if (!card.querySelector(".friend-tile-dropdown")) {
+        const dropdown = await makeFriendDropdown(userId); // now returns a DOM element
+        card.style.position = "relative"; // make the card the positioning context
+        card.appendChild(dropdown);
+
+        dropdown.style.display = "block";
+        dropdown.style.top = `${card.offsetHeight}px`;
+        dropdown.style.left = `0px`;
+      }
+    });
+
+    card.addEventListener("mouseleave", () => {
+      const dropdown = card.querySelector(".friend-tile-dropdown");
+      if (dropdown) dropdown.remove();
+    });
+    */
+
+      listContainer.appendChild(card);
+    }
+  }
+
+  // Initial runs
   hideFriendsStatus();
   replaceHomeHeader();
-
-  console.log(await getUserPresence())
+  injectBestFriendsCarousel();
 }

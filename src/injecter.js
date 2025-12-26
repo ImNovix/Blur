@@ -26,11 +26,30 @@ function matchUrl(pattern) {
   return regex.test(location.href);
 }
 
+async function waitForNode(selector) {
+  return new Promise(resolve => {
+    const node = document.querySelector(selector);
+    if (node) return resolve(node);
+
+    const obs = new MutationObserver((mutations, observer) => {
+      const found = document.querySelector(selector);
+      if (found) {
+        observer.disconnect();
+        resolve(found);
+      }
+    });
+
+    obs.observe(document.documentElement, { childList: true, subtree: true });
+  });
+}
+
 /* ----------------------------------------
  * CSS injection
  * -------------------------------------- */
-function injectCSS(path) {
+async function injectCSS(path) {
   if (loadedStyles.has(path)) return;
+
+  await waitForNode("head"); // ensure <head> exists
 
   const link = document.createElement("link");
   link.rel = "stylesheet";
