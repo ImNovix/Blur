@@ -35,8 +35,6 @@ export async function makeFriendCardSmall(userID) {
     const userRes = await getUserDetails(userID);
     const userheadshotURL = (await getUserHeadshot(userID)).imageUrl;
 
-    console.log(userPresence);
-
     let avatarStatus;
     let gameStatus;
 

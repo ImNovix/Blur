@@ -5,11 +5,12 @@ import { Storage } from "../helpers/storage.js";
 import { makeFriendCardSmall, makeFriendDropdown } from "./cards.js";
 
 // prevent running twice
-if (!window.__blurHideFriendsStatusLoaded) {
-  window.__blurHideFriendsStatusLoaded = true;
-
   const storage = new Storage();
   await storage.initDefaults();
+
+  // pre-fetch so its hopefully ready for when the elements need it
+  const userRes = await getUserDetails();
+  const headshotURL = (await getUserHeadshot()).imageUrl;
 
   /**
    * Inject global CSS for hiding friend status and custom header
@@ -42,7 +43,7 @@ if (!window.__blurHideFriendsStatusLoaded) {
           width: 128px;
           height: 128px;
           border-radius: 50%;
-          background-color: #484848ff;
+          background-color: #f7f7f8;
       }
 
       /* Text container */
@@ -133,9 +134,6 @@ if (!window.__blurHideFriendsStatusLoaded) {
    * Replace the home header with a custom div
    */
   async function replaceHomeHeader() {
-    const userRes = await getUserDetails();
-    const headshotURL = (await getUserHeadshot()).imageUrl;
-
     const oldSection = await waitForSelector(".section");
     if (!oldSection) return;
     if (document.querySelector(".blur-home-header")) return;
@@ -146,19 +144,30 @@ if (!window.__blurHideFriendsStatusLoaded) {
     const message = "purrr";
 
     newDiv.innerHTML = `
-      <img id="profile-image" class="profile-image" src="${headshotURL}" alt="Profile">
+      <img id="profile-image" class="profile-image" src="" alt="Profile">
       <div class="header-text" id="header-text">
         <div class="name-row">
-          <h1 id="display-name">${userRes.displayName}</h1>
+          <h1 id="display-name"></h1>
           <img id="premium-badge" class="premium-badge" src="" alt="Premium Badge" style="display: none;">
           <img id="verified-badge" class="verified-badge" src="" alt="Verified Badge" style="display: none;">
         </div>
-        <h2 id="username">@${userRes.name}</h2>
+        <h2 id="username">@</h2>
         <h3 id="message">${message}</h3>
       </div>
     `;
 
     oldSection.replaceWith(newDiv);
+    loadHomeHeaderElements();
+  }
+
+  async function loadHomeHeaderElements() {
+    const headerClass = document.querySelector(".blur-home-header");
+    if (headerClass) {
+      headerClass.querySelector('.profile-image').src = headshotURL;
+      headerClass.querySelector('#display-name').textContent = userRes.displayName;
+      headerClass.querySelector('#username').textContent = '@' + userRes.name;
+    }
+
   }
 
   /**
@@ -228,4 +237,3 @@ if (!window.__blurHideFriendsStatusLoaded) {
   hideFriendsStatus();
   replaceHomeHeader();
   injectBestFriendsCarousel();
-}

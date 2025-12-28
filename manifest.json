@@ -11,7 +11,6 @@
     {
       "matches": ["https://www.roblox.com/*"],
       "js": ["src/injecter.js"],
-      "type": "module",
       "run_at": "document_start"
     }
   ],

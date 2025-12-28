@@ -1,3 +1,21 @@
+/* ----------------------------------------
+ * Blur DEV — injecter.js with timers & optimized loading
+ * -------------------------------------- */
+
+// Immediately send extension URL to the page
+console.time("[Blur DEV] Total Runtime");
+console.time("[Blur DEV] Sending extension URL");
+console.log("chrome.runtime is", chrome.runtime);
+const extensionURL = chrome.runtime.getURL("");
+window.postMessage(
+  { type: "BLUR_EXTENSION_URL", url: extensionURL },
+  "*"
+);
+console.timeEnd("[Blur DEV] Sending extension URL");
+
+/* ----------------------------------------
+ * Page feature definitions
+ * -------------------------------------- */
 const pageFeatures = [
   {
     url: "roblox.com/users/friends*",
@@ -10,24 +28,18 @@ const pageFeatures = [
   }
 ];
 
+/* ----------------------------------------
+ * State tracking
+ * -------------------------------------- */
 const loadedScripts = new Set();
 const loadedStyles = new Set();
+let extensionURLAvailable = false;
 
 /* ----------------------------------------
- * URL matching
+ * Helper: Wait for a node
  * -------------------------------------- */
-function matchUrl(pattern) {
-  const regex = new RegExp(
-    pattern
-      .replace(/[.+?^${}()|[\]\\]/g, "\\$&")
-      .replace(/\*/g, ".*")
-  );
-
-  return regex.test(location.href);
-}
-
-async function waitForNode(selector) {
-  return new Promise(resolve => {
+function waitForNode(selector) {
+  return new Promise((resolve) => {
     const node = document.querySelector(selector);
     if (node) return resolve(node);
 
@@ -44,70 +56,90 @@ async function waitForNode(selector) {
 }
 
 /* ----------------------------------------
- * CSS injection
+ * Helper: Match URL
  * -------------------------------------- */
-async function injectCSS(path) {
-  if (loadedStyles.has(path)) return;
-
-  await waitForNode("head"); // ensure <head> exists
-
-  const link = document.createElement("link");
-  link.rel = "stylesheet";
-  link.href = chrome.runtime.getURL(path);
-
-  document.head.appendChild(link);
-  loadedStyles.add(path);
-
-  console.log(`[Blur DEV] Injected CSS ${path}`);
+function matchUrl(pattern) {
+  const regex = new RegExp(
+    pattern
+      .replace(/[.+?^${}()|[\]\\]/g, "\\$&")
+      .replace(/\*/g, ".*")
+  );
+  return regex.test(location.href);
 }
 
 /* ----------------------------------------
- * Feature loader
+ * Inject CSS
  * -------------------------------------- */
-async function loadFeatures() {
-  for (const page of pageFeatures) {
-    if (!matchUrl(page.url)) continue;
+async function injectCSS(path) {
+  if (!extensionURLAvailable || loadedStyles.has(path)) return;
 
-    // CSS
-    if (page.styles) {
-      for (const style of page.styles) {
-        injectCSS(style);
-      }
-    }
+  console.time(`[Blur DEV] Inject CSS ${path}`);
+  const head = await waitForNode("head");
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = extensionURL + path;
+  head.appendChild(link);
+  loadedStyles.add(path);
+  console.timeEnd(`[Blur DEV] Inject CSS ${path}`);
+}
 
-    // JS
-    if (page.scripts) {
-      for (const script of page.scripts) {
-        // import ONCE
-        if (!loadedScripts.has(script)) {
-          try {
-            await import(chrome.runtime.getURL(script));
-            loadedScripts.add(script);
-            console.log(`[Blur DEV] Loaded ${script}`);
-          } catch (err) {
-            console.error(`[Blur DEV] Error loading ${script}`, err);
-            continue;
-          }
-        }
+/* ----------------------------------------
+ * Load JS module
+ * -------------------------------------- */
+async function loadScript(path) {
+  if (!extensionURLAvailable || loadedScripts.has(path)) return;
 
-        // re-run page logic if exposed
-        const runnerName =
-          script.includes("home")
-            ? "blurHomeRun"
-            : script.includes("friends")
-            ? "blurFriendsRun"
-            : null;
-
-        if (runnerName && typeof window[runnerName] === "function") {
-          window[runnerName]();
-        }
-      }
-    }
+  console.time(`[Blur DEV] Load JS ${path}`);
+  try {
+    await import(extensionURL + path);
+    loadedScripts.add(path);
+    console.timeEnd(`[Blur DEV] Load JS ${path}`);
+    console.log(`[Blur DEV] Loaded JS: ${path}`);
+  } catch (err) {
+    console.error(`[Blur DEV] Error loading JS: ${path}`, err);
   }
 }
 
 /* ----------------------------------------
- * SPA navigation hook (REQUIRED for Roblox)
+ * Load features (CSS + JS in parallel)
+ * -------------------------------------- */
+async function loadFeatures() {
+  if (!extensionURLAvailable) return;
+  console.time("[Blur DEV] Load Features");
+
+  for (const page of pageFeatures) {
+    if (!matchUrl(page.url)) continue;
+
+    // Load CSS first (because it needs <head>)
+    const cssPromises = page.styles?.map(style => injectCSS(style)) || [];
+    await Promise.all(cssPromises);
+
+    // Load JS in parallel
+    const jsPromises = (page.scripts || []).map(async script => {
+      await loadScript(script);
+
+      // Optional: run exposed page functions
+      const runnerName =
+        script.includes("home")
+          ? "blurHomeRun"
+          : script.includes("friends")
+          ? "blurFriendsRun"
+          : null;
+
+      if (runnerName && typeof window[runnerName] === "function") {
+        console.time(`[Blur DEV] Run ${runnerName}`);
+        window[runnerName]();
+        console.timeEnd(`[Blur DEV] Run ${runnerName}`);
+      }
+    });
+    await Promise.all(jsPromises);
+  }
+
+  console.timeEnd("[Blur DEV] Load Features");
+}
+
+/* ----------------------------------------
+ * SPA navigation hook
  * -------------------------------------- */
 function hookHistory(onChange) {
   const push = history.pushState;
@@ -127,17 +159,25 @@ function hookHistory(onChange) {
 }
 
 /* ----------------------------------------
- * Init
+ * Listen for extension URL from isolated script
  * -------------------------------------- */
-let lastUrl = location.href;
+window.addEventListener("message", (event) => {
+  if (event.source !== window) return;
+  if (event.data?.type === "BLUR_EXTENSION_URL") {
+    console.time("[Blur DEV] Extension URL Received");
+    extensionURLAvailable = true;
+    window.extensionURL = event.data.url;
+    console.log("[Blur DEV] Received extension URL:", event.data.url);
 
-// initial run
-loadFeatures();
+    // Initial feature load
+    loadFeatures().then(() => console.timeEnd("[Blur DEV] Extension URL Received"));
 
-// SPA navigation
-hookHistory(() => {
-  if (location.href !== lastUrl) {
-    lastUrl = location.href;
-    loadFeatures();
+    // Hook SPA navigation
+    hookHistory(() => loadFeatures());
   }
+});
+
+// End total runtime timer on window load
+window.addEventListener("load", () => {
+  console.timeEnd("[Blur DEV] Total Runtime");
 });
