@@ -1,4 +1,4 @@
-# Blur - Blur What You Want
+# Blur - Blur the noise.
 Blur is a Roblox extension made to hide things you possibly don't want to see, as well as improve your Roblox experence.
 
 **Made for Chrome Only**
