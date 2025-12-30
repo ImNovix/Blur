@@ -3,6 +3,9 @@ export class Storage {
     this.area = area;
     this.DEFAULTS = {
       hideFriendStatus: false,
+      removeConnectButton: true,
+      renameConnectionsToFriends: true,
+      homeGreeting: "{greeting}, {displayName}!",
       bestFriends: [],
     };
   }

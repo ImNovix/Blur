@@ -31,85 +31,84 @@ export async function makeFriendCardHTML(userID) {
 }
 
 export async function makeFriendCardSmall(userID) {
-  const userPresence = await getUserPresence(userID);
-  const userRes = await getUserDetails(userID);
-  const userheadshotURL = (await getUserHeadshot(userID)).imageUrl;
+    const userPresence = await getUserPresence(userID);
+    const userRes = await getUserDetails(userID);
+    const userheadshotURL = (await getUserHeadshot(userID)).imageUrl;
 
-  let avatarStatus;
-  let gameStatus;
+    let avatarStatus;
+    let gameStatus;
 
-  if (userPresence.userPresenceType === 0) {
-    // Offline
-    avatarStatus = `<div class="avatar-status"></div>`;
-    gameStatus = `<div class="friends-carousel-tile-sublabel"></div>`;
-  } else if (userPresence.userPresenceType === 1) {
-    // Website
-    avatarStatus = `
-      <div class="avatar-status">
-        <span data-testid="presence-icon" title="Website" class="online icon-online"></span>
-      </div>
-    `;
-    gameStatus = `<div class="friends-carousel-tile-sublabel"></div>`;
-  } else if (userPresence.userPresenceType === 2) {
-    // In-Game
-    const gameTitle = userPresence.lastLocation;
-    const shoternGameTitle = truncateString(gameTitle, 15);
-    avatarStatus = `
-      <div class="avatar-status">
-        <span data-testid="presence-icon" title="${gameTitle}" class="game icon-game"></span>
-      </div>
-    `;
-    gameStatus = `
-      <div class="friends-carousel-tile-sublabel">
-        <div class="friends-carousel-tile-experience">${shoternGameTitle}</div>
-      </div>
-    `;
-  } else if (userPresence.userPresenceType === 3) {
-    // Studio
-    avatarStatus = `
-      <div class="avatar-status">
-        <span data-testid="presence-icon" title="Studio" class="studio icon-studio"></span>
-      </div>`;
-    gameStatus = `<div class="friends-carousel-tile-sublabel"></div>`;
-  }
-
-  return `
-    <div class="friends-carousel-tile">
-      <div>
-        <div>
-          <button type="button" class="options-dropdown" id="${userID}-friend-tile-button">
-            <div class="friend-tile-content">
-              <div class="avatar avatar-card-fullbody" data-testid="avatar-card-container">
-                <a href="https://www.roblox.com/users/${userID}/profile" class="avatar-card-link" data-testid="avatar-card-link">
-                  <span class="thumbnail-2d-container avatar-card-image ">
-                    <img class="" src="${userheadshotURL}" alt="" title="">
-                  </span>
-                </a>
-                ${avatarStatus}
-              </div>
-              <a href="https://www.roblox.com/users/${userID}/profile" class="friends-carousel-tile-labels" data-testid="friends-carousel-tile-labels">
-                <div class="friends-carousel-tile-label">
-                  <div class="friends-carousel-tile-name">
-                    <span class="friends-carousel-display-name">${userRes.displayName}</span>
-                  </div>
-                </div>
-                ${gameStatus}
-              </a>
+    if (userPresence.userPresenceType === 0) {
+        // Offline
+        avatarStatus = `<div class="avatar-status"></div>`;
+        gameStatus = `<div class="friends-carousel-tile-sublabel"></div>`;
+    } else if (userPresence.userPresenceType === 1) {
+        // Website
+        avatarStatus = `
+            <div class="avatar-status">
+                <span data-testid="presence-icon" title="Website" class="online icon-online"></span>
             </div>
-          </button>
+        `;
+        gameStatus = `<div class="friends-carousel-tile-sublabel"></div>`;
+    } else if (userPresence.userPresenceType === 2) {
+        // In-Game
+        const gameTitle = userPresence.lastLocation;
+        const shoternGameTitle = truncateString(gameTitle, 15);
+        avatarStatus = `
+            <div class="avatar-status">
+                <span data-testid="presence-icon" title="${gameTitle}" class="game icon-game"></span>
+            </div>
+        `;
+        gameStatus = `
+            <div class="friends-carousel-tile-sublabel">
+                <div class="friends-carousel-tile-experience">${shoternGameTitle}</div>
+            </div>
+        `;
+    } else if (userPresence.userPresenceType === 3) {
+        // Studio
+        avatarStatus = `
+            <div class="avatar-status">
+                <span data-testid="presence-icon" title="Studio" class="studio icon-studio"></span>
+            </div>`;
+        gameStatus = `<div class="friends-carousel-tile-sublabel"></div>`;
+    }
+    return `
+        <div class="friends-carousel-tile">
+            <div>
+                <div>
+                    <button type="button" class="options-dropdown" id="friend-tile-button">
+                        <div class="friend-tile-content">
+                            <div class="avatar avatar-card-fullbody" data-testid="avatar-card-container">
+                                <a href="https://www.roblox.com/users/${userID}/profile" class="avatar-card-link" data-testid="avatar-card-link">
+                                    <span class="thumbnail-2d-container avatar-card-image ">
+                                        <img class="" src="${userheadshotURL}" alt="" title="">
+                                    </span>
+                                </a>
+                                ${avatarStatus}
+                            </div>
+                            <a href="https://www.roblox.com/users/${userID}/profile" class="friends-carousel-tile-labels" data-testid="friends-carousel-tile-labels">
+                                <div class="friends-carousel-tile-label">
+                                    <div class="friends-carousel-tile-name">
+                                        <span class="friends-carousel-display-name">${userRes.displayName}</span>
+                                    </div>
+                                </div>
+                                ${gameStatus}
+                            </a>
+                        </div>
+                    </button>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  `;
+    `;
 }
 
 export async function makeFriendDropdown(userID) {
   const userPresence = await getUserPresence(userID);
   const userRes = await getUserDetails(userID);
 
-  if (userPresence.userPresenceType === 0) {
+  if (userPresence.userPresenceType !== 2) {
     return `
-      <ul style="list-style:none;margin:0;padding:0;">
+      <ul>
         <li>
           <button type="button" class="friend-tile-dropdown-button">
             <span class="icon-chat-gray"></span> Chat with ${userRes.displayName}
@@ -123,15 +122,14 @@ export async function makeFriendDropdown(userID) {
       </ul>
     `;
   } else {
-    const universeIconURL = (userPresence.universeId)
-      ? await getUniverseIcon(userPresence.universeId)
-      : "";
+    const universeIconURL = (await getUniverseIcon(userPresence.universeId)).imageUrl || "";
+    console.log(universeIconURL);
     const locationText = userPresence.lastLocation || "In game";
     return `
-      <div class="in-game-friend-card" style="padding:5px;">
+      <div class="in-game-friend-card">
         <button type="button" class="friend-tile-non-styled-button">
           <span class="thumbnail-2d-container friend-tile-game-card">
-            <img class="game-card-thumb" src="${universeIconURL}" alt="" title="" style="width:48px;height:48px;">
+            <img class="game-card-thumb" src="${universeIconURL}" alt="" title="">
           </span>
         </button>
         <div class="friend-presence-info">
@@ -139,7 +137,7 @@ export async function makeFriendDropdown(userID) {
           <button type="button" class="btn-growth-sm btn-full-width">Join</button>
         </div>
       </div>
-      <ul style="list-style:none;margin:0;padding:0;">
+      <ul>
         <li>
           <button type="button" class="friend-tile-dropdown-button">
             <span class="icon-chat-gray"></span> Chat with ${userRes.displayName}

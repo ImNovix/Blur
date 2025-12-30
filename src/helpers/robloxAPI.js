@@ -37,6 +37,13 @@ export class fetchRoblox {
         )).userPresences[0];
     }
 
+    static async getUserPremium(userID = "0") {
+        if (userID === "0") {
+            userID = (await fetchRoblox.getAuth()).id;
+        }
+        return await fetchRobloxAPI(`https://premiumfeatures.roblox.com/v1/users/${userID}/validate-membership`);
+    }
+
     // Thumbnails
     static async getUserHeadshot(userID = "0", size="150x150", format="Png", isCircular="false") {
         if (userID === "0") {
