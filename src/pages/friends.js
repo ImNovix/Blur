@@ -33,16 +33,6 @@ function getRobloxFriendCards() {
 }
 
 /* ----------------------------------------
- * Best Friends Storage
- * -------------------------------------- */
-
-async function getBestFriends() {
-  if (!authId) return [];
-  const value = await storage.get("bestFriends", [], authId);
-  return Array.isArray(value) ? value : [];
-}
-
-/* ----------------------------------------
  * Best Friends Section
  * -------------------------------------- */
 
@@ -59,7 +49,7 @@ async function injectBestFriendsSection() {
     return;
   }
 
-  const bestFriends = await getBestFriends();
+  const bestFriends = await storage.get('bestFriends', [], authId);
 
   const section = document.createElement("div");
   section.className = "friends-content section blur-best-friends";
@@ -84,7 +74,7 @@ async function injectBestFriendCards() {
   const list = document.querySelector(".blur-best-friends-cards");
   if (!list) return;
 
-  const bestFriends = await getBestFriends();
+  const bestFriends = await storage.get('bestFriends', [], authId);
   const existing = new Set([...list.children].map(c => c.id));
   const cardsToPopulate = [];
 

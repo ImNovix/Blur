@@ -37,7 +37,6 @@ export class Storage {
         }
 
         if (Object.keys(toSet).length > 0) {
-          console.log("[Storage] Initializing defaults:", toSet);
           this.area.set(toSet, resolve);
         } else resolve();
       });
@@ -55,11 +54,8 @@ export class Storage {
 
           if (value === undefined) value = fallback ?? [];
           if (Array.isArray(fallback) && !Array.isArray(value)) value = [];
-
-          console.log(`[Storage] GET user ${authID} → "${key}":`, value);
         } else {
           value = result[key] ?? fallback ?? this.DEFAULTS[key];
-          console.log(`[Storage] GET global key "${key}":`, value);
         }
 
         resolve(value);
@@ -77,10 +73,8 @@ export class Storage {
 
           userObj[key] = value;
 
-          console.log(`[Storage] SET user ${authID} → "${key}":`, value);
           this.area.set({ [authID]: userObj }, resolve);
         } else {
-          console.log(`[Storage] SET global key "${key}":`, value);
           this.area.set({ [key]: value }, resolve);
         }
       });
@@ -95,7 +89,6 @@ export class Storage {
       arr.push(item);
       await this.set(key, arr, authID);
     }
-    console.log(`[Storage] addToArray "${key}" for ${authID}:`, arr);
     return arr;
   }
 
@@ -105,7 +98,6 @@ export class Storage {
     if (!Array.isArray(arr)) arr = [];
     const filtered = arr.filter(i => i !== item);
     await this.set(key, filtered, authID);
-    console.log(`[Storage] removeFromArray "${key}" for ${authID}:`, filtered);
     return filtered;
   }
 
@@ -113,7 +105,6 @@ export class Storage {
     if (!authID) throw new Error("authID required for per-user arrays");
     let arr = await this.get(key, [], authID);
     if (!Array.isArray(arr)) arr = [];
-    console.log(`[Storage] containsInArray "${key}" for ${authID}:`, arr.includes(item));
     return arr.includes(item);
   }
 
@@ -125,7 +116,6 @@ export class Storage {
 
   async resetAll() {
     return new Promise(resolve => {
-      console.warn("[Storage] RESET ALL DATA");
       this.area.clear(() => {
         this.initDefaults().then(resolve);
       });

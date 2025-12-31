@@ -1,7 +1,3 @@
-/* ----------------------------------------
- * Blur DEV — injecter.js with timers & optimized loading
- * -------------------------------------- */
-
 // Immediately send extension URL to the page
 console.time("[Blur DEV] Total Runtime");
 console.time("[Blur DEV] Sending extension URL");
@@ -24,7 +20,12 @@ const pageFeatures = [
   },
   {
     url: "roblox.com/home*",
-    scripts: ["src/pages/home.js"]
+    scripts: ["src/pages/home.js"],
+    styles: ["src/pages/css/home.css"]
+  },
+  {
+    url: "roblox.com/users/*/profile",
+    scripts: ["src/pages/profile.js"]
   }
 ];
 

@@ -4,17 +4,90 @@ export class fetchRoblox {
         return await fetchRobloxAPI("https://users.roblox.com/v1/users/authenticated");
     }
 
-    // Friends 
+    // Friends
     static async getFriendCount(userID = "0") {
         if (userID === "0") {
             return await fetchRobloxAPI(`https://friends.roblox.com/v1/my/friends/count`);
         } else {
-            return (await fetchRobloxAPI(`https://friends.roblox.com/v1/${userID}/friends/count`))
+            return (await fetchRobloxAPI(`https://friends.roblox.com/v1/users/${userID}/friends/count`))
         }
     }
 
+    static async getFriends(userID = "0") {
+        if (userID === "0") {
+            userID = (await fetchRoblox.getAuth()).id;
+        }
+        return (await fetchRobloxAPI(`https://friends.roblox.com/v1/users/${userID}/friends`));
+    }
+
     static async getSuggestedFriends() {
-        return await fetchRobloxAPI(`https://friends.roblox.com/v1/users/3602693727/friends/recommendations?source=AddFriendsPage`)
+        const authID = (await fetchRoblox.getAuth()).id;
+        return await fetchRobloxAPI(`https://friends.roblox.com/v1/users/${authID}/friends/recommendations?source=AddFriendsPage`)
+    }
+
+    static async getMutualFriends(userID) {
+        try {
+            const [friendsARes, friendsBRes] = await Promise.all([
+                fetchRoblox.getFriends(),       // current user's friends
+                fetchRoblox.getFriends(userID)  // target user's friends
+            ]);
+
+            // Extract arrays safely
+            const friendsA = Array.isArray(friendsARes.data) ? friendsARes.data : [];
+            const friendsB = Array.isArray(friendsBRes.data) ? friendsBRes.data : [];
+
+            // Compute mutuals
+            const friendIdsB = new Set(friendsB.map(f => f.id));
+            const mutual = friendsA.filter(f => friendIdsB.has(f.id));
+
+            return {
+                mutualFriends: mutual,
+                count: mutual.length
+            };
+        } catch (err) {
+            console.error("Error fetching mutual friends:", err);
+            return { mutualFriends: [], count: 0, error: err.message };
+        }
+    }
+
+    static async getFriendship(userID) {
+        const authID = (await fetchRoblox.getAuth()).id;
+        const res = await fetchRobloxAPI(`https://friends.roblox.com/v1/users/${authID}/friends/statuses?userIds=${userID}`);
+        return res.data[0];
+    }
+
+    static async getFriendshipDuration(userID) {
+        const url = "https://apis.roblox.com/profile-insights-api/v1/multiProfileInsights";
+
+        const body = {
+            rankingStrategy: "tc_info_boost",
+            userIds: [userID]
+        };
+
+        try {
+            const res = await fetchRobloxAPI(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body)
+            });
+
+            const insights = res.userInsights?.[0]?.profileInsights || [];
+
+            // Find the friendship date insight
+            const friendshipInsight = insights.find(i => i.friendshipAgeInsight);
+            if (!friendshipInsight) return "Unknown";
+
+            const { seconds, nanos } = friendshipInsight.friendshipAgeInsight.friendsSinceDateTime;
+            const friendsSince = new Date(seconds * 1000 + nanos / 1e6);
+
+            // Format with full month name + ordinal + year
+            const formatted = formatFriendsSince(friendsSince);
+
+            return formatted;
+        } catch (err) {
+            console.error("Failed to fetch friendship duration:", err);
+            return "Unknown";
+        }
     }
 
     // Users
@@ -105,4 +178,24 @@ async function fetchRobloxAPI(url, options = {}) {
     }
 
     throw new Error("Failed to fetch with valid CSRF token");
+}
+
+function formatFriendsSince(date) {
+    if (!(date instanceof Date)) return date;
+
+    const day = date.getDate();
+    const year = date.getFullYear();
+    const month = date.toLocaleString(undefined, { month: "long" });
+
+    const getOrdinal = (n) => {
+        if (n >= 11 && n <= 13) return "th";
+        switch (n % 10) {
+            case 1: return "st";
+            case 2: return "nd";
+            case 3: return "rd";
+            default: return "th";
+        }
+    };
+
+    return `${month} ${day}${getOrdinal(day)}, ${year}`;
 }

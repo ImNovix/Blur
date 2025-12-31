@@ -1,6 +1,11 @@
-import { getUserDetails, getUserPresence } from "../modules/users.js";
-import { getUserHeadshot, getUniverseIcon } from "../modules/thumbnails.js";
-import { truncateString } from "../helpers/useful.js";
+import { fetchRoblox } from "../helpers/robloxAPI.js";
+
+function truncateString(str, maxLength) {
+  if (str.length > maxLength) {
+    return str.slice(0, maxLength - 3) + '...';
+  }
+  return str;
+}
 
 export async function makeFriendCardHTML(userID) {
     return `
@@ -31,9 +36,9 @@ export async function makeFriendCardHTML(userID) {
 }
 
 export async function makeFriendCardSmall(userID) {
-    const userPresence = await getUserPresence(userID);
-    const userRes = await getUserDetails(userID);
-    const userheadshotURL = (await getUserHeadshot(userID)).imageUrl;
+    const userPresence = await fetchRoblox.getUserPresence(userID);
+    const userRes = await fetchRoblox.getUserDetails(userID);
+    const userheadshotURL = (await fetchRoblox.getUserHeadshot(userID)).imageUrl;
 
     let avatarStatus;
     let gameStatus;
@@ -53,7 +58,7 @@ export async function makeFriendCardSmall(userID) {
     } else if (userPresence.userPresenceType === 2) {
         // In-Game
         const gameTitle = userPresence.lastLocation;
-        const shoternGameTitle = truncateString(gameTitle, 15);
+        const shoternGameTitle = truncateString(gameTitle, 20);
         avatarStatus = `
             <div class="avatar-status">
                 <span data-testid="presence-icon" title="${gameTitle}" class="game icon-game"></span>
@@ -103,8 +108,8 @@ export async function makeFriendCardSmall(userID) {
 }
 
 export async function makeFriendDropdown(userID) {
-  const userPresence = await getUserPresence(userID);
-  const userRes = await getUserDetails(userID);
+  const userPresence = await fetchRoblox.getUserPresence(userID);
+  const userRes = await fetchRoblox.getUserDetails(userID);
 
   if (userPresence.userPresenceType !== 2) {
     return `
@@ -122,7 +127,7 @@ export async function makeFriendDropdown(userID) {
       </ul>
     `;
   } else {
-    const universeIconURL = (await getUniverseIcon(userPresence.universeId)).imageUrl || "";
+    const universeIconURL = (await fetchRoblox.getUniverseIcon(userPresence.universeId)).imageUrl || "";
     console.log(universeIconURL);
     const locationText = userPresence.lastLocation || "In game";
     return `

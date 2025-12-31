@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Blur",
   "description": "Blur What You Want",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "permissions": [
     "storage",
     "activeTab"
@@ -15,13 +15,12 @@
     }
   ],
   "host_permissions": [
-    "https://www.roblox.com/*"
+    "https://*.roblox.com/*"
   ],
   "web_accessible_resources": [
     {
       "resources": [
         "src/**/*.js",
-        "local/*.js",
         "src/images/*.png",
         "src/pages/css/*.css"
       ],

@@ -13,86 +13,8 @@ const userRes = await fetchRoblox.getUserDetails();
 const authId = String(userRes.id);
 const headshotURL = (await fetchRoblox.getUserHeadshot()).imageUrl;
 
-// Helper to get storage values with debug
-async function getStorage(key, fallback) {
-  const value = storage.isPerUserKey(key)
-    ? await storage.get(key, fallback, authId)
-    : await storage.get(key, fallback);
-  console.log(`[Storage] GET ${storage.isPerUserKey(key) ? "per-user" : "global"} key "${key}":`, value);
-  return value;
-}
-
-// 🔧 FIX: correct bestFriends source
-async function getBestFriends() {
-  const bestFriends = await getStorage("bestFriends", []);
-  return Array.isArray(bestFriends) ? bestFriends : [];
-}
-
-console.log(await storage.getAll());
-
-function injectCSS() {
-  if (document.getElementById("blur-home-style")) return;
-
-  const style = document.createElement("style");
-  style.id = "blur-home-style";
-  style.textContent = `
-    .blur-hide-friend-status .avatar-status {
-      display: none !important;
-    }
-    .blur-hide-friend-status .friends-carousel-tile-experience {
-      display: none !important;
-    }
-    .header {
-      display: flex;
-      align-items: center;
-      padding: 10px;
-    }
-    .header img.profile-image {
-      width: 128px;
-      height: 128px;
-      border-radius: 50%;
-      background-color: #f7f7f8;
-    }
-    .header-text {
-      display: flex;
-      flex-direction: column;
-      margin-left: 20px;
-    }
-    .header-text h1 {
-      margin: 0;
-      font-size: 22px;
-      color: white;
-      line-height: 1;
-    }
-    .header-text h2 {
-      margin: 0 0 4px 0;
-      font-size: 16px;
-      color: #bfbfbf;
-      line-height: 1;
-    }
-    .header-text h3 {
-      margin-top: 0;
-      font-size: 16px;
-      color: #c8c8c8;
-    }
-    .name-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .premium-badge,
-    .verified-badge {
-      width: 24px; 
-      height: 24px;
-    }
-  `;
-  document.head.appendChild(style);
-}
-
 /** Adds a toggle to hide friends' status */
 async function hideFriendsStatus() {
-  injectCSS();
-
   const header = await waitForSelector(".container-header.people-list-header");
   const h2 = header?.querySelector("h2");
   const count = h2?.querySelector(".friends-count");
@@ -100,7 +22,7 @@ async function hideFriendsStatus() {
   if (h2.querySelector(".status-toggle")) return;
 
   // 🔑 read setting (global key)
-  const isHidden = await getStorage("hideFriendStatus", false);
+  const isHidden = await storage.get("hideFriendStatus", false);
 
   const wrapper = document.createElement("label");
   wrapper.className = "status-toggle";
@@ -133,7 +55,6 @@ async function hideFriendsStatus() {
   checkbox.addEventListener("change", async () => {
     const value = checkbox.checked;
     document.body.classList.toggle("blur-hide-friend-status", value);
-    console.log("[Storage] SET hideFriendStatus:", value);
     await storage.set("hideFriendStatus", value); // global key, NO authId
   });
 }
@@ -143,7 +64,7 @@ async function injectHomeHeader() {
   if (!oldSection) return;
   if (document.querySelector(".blur-home-header")) return;
 
-  let template = await getStorage("homeGreeting", "{greeting}, {displayName}!");
+  let template = await storage.get("homeGreeting", "{greeting}, {displayName}!");
   if (typeof template !== "string") template = "{greeting}, {displayName}!";
 
   const date = new Date();
@@ -202,7 +123,7 @@ async function injectBestFriendsCarousel() {
   const outerContainer = await waitForSelector(".friend-carousel-container");
   if (!outerContainer) return;
 
-  const bestFriends = await getBestFriends();
+  const bestFriends = await storage.get('bestFriends', [], authId);
   if (!bestFriends.length) return;
 
   const homeContainer = document.querySelector("#HomeContainer");
@@ -293,8 +214,39 @@ async function injectBestFriendsCarousel() {
         dropdown.style.display = "none";
       });
 
-      dropdown.addEventListener("mouseenter", () => {
+      card.addEventListener("mouseenter", async () => {
+        if (!populated) {
+          const dropdownHTML = await makeFriendDropdown(userId);
+          if (!dropdownHTML) return;
+          dropdown.innerHTML = dropdownHTML;
+          populated = true;
+
+          // Attach click handlers here
+          const chatButton = dropdown.querySelector(".friend-tile-dropdown-button:first-child");
+          if (chatButton) {
+            chatButton.addEventListener("click", () => {
+              console.log(`Chat with ${userId}`);
+              // Insert your chat-opening logic here
+            });
+          }
+
+          const viewProfileButton = dropdown.querySelector(".friend-tile-dropdown-button:nth-child(2)");
+          if (viewProfileButton) {
+            viewProfileButton.addEventListener("click", () => {
+              window.open(`https://www.roblox.com/users/${userId}/profile`, "_blank");
+            });
+          }
+
+          const joinButton = dropdown.querySelector(".btn-growth-sm");
+          if (joinButton) {
+            joinButton.addEventListener("click", () => {
+              console.log(`Join game for ${userId}`);
+              // Insert your join-game logic here
+            });
+          }
+        }
         dropdown.style.display = "block";
+        positionDropdown();
       });
 
       dropdown.addEventListener("mouseleave", e => {
@@ -314,7 +266,7 @@ async function injectBestFriendsCarousel() {
 }
 
 async function removeConnectButton() {
-  const shouldRemove = await getStorage("removeConnectButton", true);
+  const shouldRemove = await storage.get("removeConnectButton", true);
   if (!shouldRemove) return;
 
   const observer = new MutationObserver(() => {
@@ -338,7 +290,7 @@ async function removeConnectButton() {
 }
 
 async function renameFriendsRow() {
-  const value = await getStorage("renameConnectionsToFriends", true);
+  const value = await storage.get("renameConnectionsToFriends", true);
   if (!value) return;
 
   await waitForSelector(".container-header.people-list-header");
