@@ -198,17 +198,6 @@ async function injectBestFriendsCarousel() {
         dropdown.style.left = left + "px";
       }
 
-      card.addEventListener("mouseenter", async () => {
-        if (!populated) {
-          const dropdownHTML = await makeFriendDropdown(userId);
-          if (!dropdownHTML) return;
-          dropdown.innerHTML = dropdownHTML;
-          populated = true;
-        }
-        dropdown.style.display = "block";
-        positionDropdown();
-      });
-
       card.addEventListener("mouseleave", e => {
         if (e.relatedTarget && dropdown.contains(e.relatedTarget)) return;
         dropdown.style.display = "none";
@@ -218,31 +207,21 @@ async function injectBestFriendsCarousel() {
         if (!populated) {
           const dropdownHTML = await makeFriendDropdown(userId);
           if (!dropdownHTML) return;
+
           dropdown.innerHTML = dropdownHTML;
           populated = true;
 
-          // Attach click handlers here
-          const chatButton = dropdown.querySelector(".friend-tile-dropdown-button:first-child");
-          if (chatButton) {
-            chatButton.addEventListener("click", () => {
-              console.log(`Chat with ${userId}`);
-              // Insert your chat-opening logic here
-            });
-          }
+          // Attach click handlers
+          const buttons = dropdown.querySelectorAll('button.friend-tile-dropdown-button');
+          buttons.forEach(btn => {
+            if (btn.textContent.includes("View Profile")) {
+              btn.addEventListener("click", () => { window.open(`https://www.roblox.com/users/${userId}/profile`, "_blank"); });
+            }
+          });
 
-          const viewProfileButton = dropdown.querySelector(".friend-tile-dropdown-button:nth-child(2)");
-          if (viewProfileButton) {
-            viewProfileButton.addEventListener("click", () => {
-              window.open(`https://www.roblox.com/users/${userId}/profile`, "_blank");
-            });
-          }
-
-          const joinButton = dropdown.querySelector(".btn-growth-sm");
-          if (joinButton) {
-            joinButton.addEventListener("click", () => {
-              console.log(`Join game for ${userId}`);
-              // Insert your join-game logic here
-            });
+          const joinBtn = dropdown.querySelector(".btn-growth-sm");
+          if (joinBtn) {
+            joinBtn.addEventListener("click", () => { window.open(`roblox://userId=${userId}`) });
           }
         }
         dropdown.style.display = "block";
