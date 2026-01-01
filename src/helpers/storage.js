@@ -1,4 +1,12 @@
 export class Storage {
+  static isContextAlive() {
+    try {
+      return !!chrome?.runtime?.id;
+    } catch {
+      return false;
+    }
+  }
+
   constructor(area = chrome.storage.local) {
     this.area = area;
 
@@ -19,73 +27,101 @@ export class Storage {
 
   initDefaults() {
     return new Promise(resolve => {
+      if (!Storage.isContextAlive()) return resolve();
+
       this.area.get(null, current => {
-        const toSet = {};
-        for (const key in this.DEFAULTS) {
-          const defaultValue = this.DEFAULTS[key];
-          const currentValue = current[key];
+        if (!Storage.isContextAlive()) return resolve();
 
-          const isMissing = !(key in current);
-          const isBroken =
-            currentValue === null ||
-            currentValue === undefined ||
-            (Array.isArray(defaultValue) && !Array.isArray(currentValue)) ||
-            (typeof defaultValue === "object" &&
-              !Array.isArray(defaultValue) &&
-              typeof currentValue !== "object");
+        try {
+          const toSet = {};
 
-          if (isMissing || isBroken) toSet[key] = structuredClone(defaultValue);
+          for (const key in this.DEFAULTS) {
+            const def = this.DEFAULTS[key];
+            const cur = current[key];
+
+            const isMissing = !(key in current);
+            const isBroken =
+              cur === null ||
+              cur === undefined ||
+              (Array.isArray(def) && !Array.isArray(cur)) ||
+              (typeof def === "object" &&
+                !Array.isArray(def) &&
+                typeof cur !== "object");
+
+            if (isMissing || isBroken) {
+              toSet[key] = structuredClone(def);
+            }
+          }
+
+          Object.keys(toSet).length
+            ? this.area.set(toSet, resolve)
+            : resolve();
+        } catch {
+          resolve();
         }
-
-        if (Object.keys(toSet).length > 0) {
-          this.area.set(toSet, resolve);
-        } else resolve();
       });
     });
   }
 
   get(key, fallback, authID) {
     return new Promise(resolve => {
+      if (!Storage.isContextAlive()) {
+        resolve(fallback ?? this.DEFAULTS[key]);
+        return;
+      }
+
       this.area.get(null, result => {
-        let value;
-
-        if (authID && this.isPerUserKey(key)) {
-          const userObj = result[authID] || {};
-          value = userObj[key];
-
-          if (value === undefined) value = fallback ?? [];
-          if (Array.isArray(fallback) && !Array.isArray(value)) value = [];
-        } else {
-          value = result[key] ?? fallback ?? this.DEFAULTS[key];
+        if (!Storage.isContextAlive()) {
+          resolve(fallback ?? this.DEFAULTS[key]);
+          return;
         }
 
-        resolve(value);
+        try {
+          let value;
+
+          if (authID && this.isPerUserKey(key)) {
+            const userObj = result[authID] || {};
+            value = userObj[key];
+            if (value === undefined) value = fallback ?? [];
+            if (Array.isArray(fallback) && !Array.isArray(value)) value = [];
+          } else {
+            value = result[key] ?? fallback ?? this.DEFAULTS[key];
+          }
+
+          resolve(value);
+        } catch {
+          resolve(fallback ?? this.DEFAULTS[key]);
+        }
       });
     });
   }
 
   set(key, value, authID) {
     return new Promise(resolve => {
+      if (!Storage.isContextAlive()) return resolve();
+
       this.area.get(null, result => {
-        if (authID && this.isPerUserKey(key)) {
-          const userObj = result[authID] || {};
+        if (!Storage.isContextAlive()) return resolve();
 
-          if (!Array.isArray(value)) value = [];
-
-          userObj[key] = value;
-
-          this.area.set({ [authID]: userObj }, resolve);
-        } else {
-          this.area.set({ [key]: value }, resolve);
+        try {
+          if (authID && this.isPerUserKey(key)) {
+            const userObj = result[authID] || {};
+            userObj[key] = Array.isArray(value) ? value : [];
+            this.area.set({ [authID]: userObj }, resolve);
+          } else {
+            this.area.set({ [key]: value }, resolve);
+          }
+        } catch {
+          resolve();
         }
       });
     });
   }
 
   async addToArray(key, item, authID) {
-    if (!authID) throw new Error("authID required for per-user arrays");
-    let arr = await this.get(key, [], authID);
-    if (!Array.isArray(arr)) arr = [];
+    if (!authID) return [];
+    const arr = await this.get(key, [], authID);
+    if (!Array.isArray(arr)) return [];
     if (!arr.includes(item)) {
       arr.push(item);
       await this.set(key, arr, authID);
@@ -94,32 +130,32 @@ export class Storage {
   }
 
   async removeFromArray(key, item, authID) {
-    if (!authID) throw new Error("authID required for per-user arrays");
-    let arr = await this.get(key, [], authID);
-    if (!Array.isArray(arr)) arr = [];
+    if (!authID) return [];
+    const arr = await this.get(key, [], authID);
+    if (!Array.isArray(arr)) return [];
     const filtered = arr.filter(i => i !== item);
     await this.set(key, filtered, authID);
     return filtered;
   }
 
   async containsInArray(key, item, authID) {
-    if (!authID) throw new Error("authID required for per-user arrays");
-    let arr = await this.get(key, [], authID);
-    if (!Array.isArray(arr)) arr = [];
+    if (!authID) return false;
+    const arr = await this.get(key, [], authID);
+    if (!Array.isArray(arr)) return false;
     return arr.includes(item);
   }
 
-  async getAll() {
+  getAll() {
     return new Promise(resolve => {
-      this.area.get(null, result => resolve(result));
+      if (!Storage.isContextAlive()) return resolve({});
+      this.area.get(null, result => resolve(result ?? {}));
     });
   }
 
-  async resetAll() {
+  resetAll() {
     return new Promise(resolve => {
-      this.area.clear(() => {
-        this.initDefaults().then(resolve);
-      });
+      if (!Storage.isContextAlive()) return resolve();
+      this.area.clear(() => this.initDefaults().then(resolve));
     });
   }
 }

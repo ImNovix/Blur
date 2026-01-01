@@ -14,6 +14,10 @@ console.timeEnd("[Blur DEV] Sending extension URL");
  * -------------------------------------- */
 const pageFeatures = [
   {
+    url: "roblox.com/*",
+    scripts: ["src/pages/all.js"]
+  },
+  {
     url: "roblox.com/users/friends*",
     scripts: ["src/pages/friends.js"],
     styles: ["src/pages/css/friends.css"]
