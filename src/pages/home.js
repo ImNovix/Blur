@@ -70,6 +70,7 @@ async function injectHomeHeader() {
   const date = new Date();
   const { displayName: displayNameValue, userName: userNameValue } = userRes;
 
+  // Determine time-based greeting
   let greeting;
   const hour = date.getHours();
   if (hour >= 5 && hour < 12) greeting = "Morning";
@@ -79,18 +80,66 @@ async function injectHomeHeader() {
 
   let greetingText = template.replaceAll("{greeting}", greeting);
 
-  const hasDisplay = greetingText.includes("{displayName}");
-  const hasUsername = greetingText.includes("{username}");
-  if (hasDisplay && hasUsername) greetingText = greetingText.replaceAll("{username}", "");
-  if (hasDisplay) greetingText = greetingText.replaceAll("{displayName}", displayNameValue);
-  if (!hasDisplay && hasUsername) greetingText = greetingText.replaceAll("{username}", userNameValue);
+  // -------------------------
+  // Special date messages & user's birthday
+  // -------------------------
+  const month = date.getMonth() + 1; // January = 0
+  const day = date.getDate();
 
-  greetingText = greetingText
-    .replace(/\s+,/g, ",")
-    .replace(/,\s+/g, ", ")
-    .replace(/\s{2,}/g, " ")
-    .trim();
+  let isSpecialMessage = false;
+  let messages = [];
 
+  // Holiday messages
+  const holidayMessages = {
+    "1-1": "🎉 New year, new me! Happy New Year!",
+    "2-14": "💘 Love is in the air! Happy Valentine's Day!",
+    "10-31": "🎃 Boo! Happy Halloween!",
+    "12-25": "🎄 Merry Christmas!"
+  };
+
+  const key = `${month}-${day}`;
+  const holidayMessage = holidayMessages[key];
+  if (holidayMessage) {
+    messages.push(holidayMessage);
+    isSpecialMessage = true;
+  }
+
+  // User birthday
+  if (await storage.get('celebrateUsersBirthday', false)) {
+    try {
+      const res = await fetchRoblox.getUserBirthday();
+      if (res && month === res.birthMonth && day === res.birthDay) {
+        messages.push("Happy Birthday");
+        isSpecialMessage = true;
+      }
+    } catch (err) {
+      console.error("Failed to fetch user birthday:", err);
+    }
+  }
+
+  // Combine messages with proper grammar
+  if (messages.length > 0) {
+    if (messages.length === 1) greetingText = messages[0] + "!";
+    else if (messages.length === 2) greetingText = `${messages[0]} and ${messages[1]}!`;
+    else greetingText = messages.slice(0, -1).join(", ") + `, and ${messages[messages.length - 1]}!`;
+  } else {
+    // Apply {displayName} / {username} replacements if not a special message
+    const hasDisplay = greetingText.includes("{displayName}");
+    const hasUsername = greetingText.includes("{username}");
+    if (hasDisplay && hasUsername) greetingText = greetingText.replaceAll("{username}", "");
+    if (hasDisplay) greetingText = greetingText.replaceAll("{displayName}", displayNameValue);
+    if (!hasDisplay && hasUsername) greetingText = greetingText.replaceAll("{username}", userNameValue);
+
+    greetingText = greetingText
+      .replace(/\s+,/g, ",")
+      .replace(/,\s+/g, ", ")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+  }
+
+  // -------------------------
+  // Render header
+  // -------------------------
   const newDiv = document.createElement("div");
   newDiv.className = "blur-home-header header";
   newDiv.innerHTML = `

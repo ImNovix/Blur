@@ -4,6 +4,10 @@ export class fetchRoblox {
         return await fetchRobloxAPI("https://users.roblox.com/v1/users/authenticated");
     }
 
+    static async getUserBirthday() {
+        return await fetchRobloxAPI(`https://users.roblox.com/v1/birthdate`)
+    }
+
     // Friends
     static async getFriendCount(userID = "0") {
         if (userID === "0") {

@@ -6,6 +6,7 @@ export class Storage {
       hideFriendStatus: false,
       removeConnectButton: true,
       renameConnectionsToFriends: true,
+      celerbateUsersBirthday: true,
       homeGreeting: "{greeting}, {displayName}!",
     };
 
