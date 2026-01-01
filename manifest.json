@@ -1,12 +1,19 @@
 {
   "manifest_version": 3,
   "name": "Blur",
-  "description": "Blur What You Want",
+  "description": "Blur the Noise",
   "version": "1.0.0",
   "permissions": [
     "storage",
-    "activeTab"
+    "activeTab",
+    "notifications"
   ],
+  "icons": {
+    "16": "src/images/icons/16.png",
+    "32": "src/images/icons/32.png",
+    "48": "src/images/icons/48.png",
+    "128": "src/images/icons/128.png"
+  },
   "content_scripts": [
     {
       "matches": ["https://www.roblox.com/*"],
@@ -22,9 +29,14 @@
       "resources": [
         "src/**/*.js",
         "src/images/*.png",
+        "src/images/icons/*.png",
         "src/pages/css/*.css"
       ],
       "matches": ["<all_urls>"]
     }
-  ]
+  ],
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  }
 }

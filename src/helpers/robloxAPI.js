@@ -90,6 +90,18 @@ export class fetchRoblox {
         }
     }
 
+    static async acceptFriendRequest(userID) {
+        return await fetchRobloxAPI(`https://friends.roblox.com/v1/users/${userID}/accept-friend-request`, { method: "POST", });
+    }
+
+    static async declineFriendRequest(userID) {
+        return await fetchRobloxAPI(`https://friends.roblox.com/v1/users/${userID}/decline-friend-request`, { method: "POST", });
+    }
+
+    static async getFriendRequests() {
+        return await fetchRobloxAPI(`https://friends.roblox.com/v1/my/friends/requests`);
+    }
+
     // Users
     static async getUserDetails(userID = "0") {
         if (userID === "0") {
