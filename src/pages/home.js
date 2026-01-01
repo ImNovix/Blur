@@ -64,13 +64,16 @@ async function injectHomeHeader() {
   if (!oldSection) return;
   if (document.querySelector(".blur-home-header")) return;
 
+  // Get greeting template
   let template = await storage.get("homeGreeting", "{greeting}, {displayName}!");
   if (typeof template !== "string") template = "{greeting}, {displayName}!";
 
   const date = new Date();
   const { displayName: displayNameValue, userName: userNameValue } = userRes;
 
-  // Determine time-based greeting
+  // -------------------------
+  // Time-based greeting
+  // -------------------------
   let greeting;
   const hour = date.getHours();
   if (hour >= 5 && hour < 12) greeting = "Morning";
@@ -81,12 +84,11 @@ async function injectHomeHeader() {
   let greetingText = template.replaceAll("{greeting}", greeting);
 
   // -------------------------
-  // Special date messages & user's birthday
+  // Special messages (holidays & birthday)
   // -------------------------
-  const month = date.getMonth() + 1; // January = 0
+  const month = date.getMonth() + 1;
   const day = date.getDate();
 
-  let isSpecialMessage = false;
   let messages = [];
 
   // Holiday messages
@@ -97,45 +99,42 @@ async function injectHomeHeader() {
     "12-25": "🎄 Merry Christmas!"
   };
 
-  const key = `${month}-${day}`;
-  const holidayMessage = holidayMessages[key];
-  if (holidayMessage) {
-    messages.push(holidayMessage);
-    isSpecialMessage = true;
-  }
+  const holidayMessage = holidayMessages[`${month}-${day}`];
+  if (holidayMessage) messages.push(holidayMessage);
 
   // User birthday
   if (await storage.get('celebrateUsersBirthday', false)) {
     try {
       const res = await fetchRoblox.getUserBirthday();
       if (res && month === res.birthMonth && day === res.birthDay) {
-        messages.push("Happy Birthday");
-        isSpecialMessage = true;
+        messages.push("🎂 Happy Birthday!");
       }
     } catch (err) {
       console.error("Failed to fetch user birthday:", err);
     }
   }
 
-  // Combine messages with proper grammar
-  if (messages.length > 0) {
-    if (messages.length === 1) greetingText = messages[0] + "!";
-    else if (messages.length === 2) greetingText = `${messages[0]} and ${messages[1]}!`;
-    else greetingText = messages.slice(0, -1).join(", ") + `, and ${messages[messages.length - 1]}!`;
-  } else {
-    // Apply {displayName} / {username} replacements if not a special message
-    const hasDisplay = greetingText.includes("{displayName}");
-    const hasUsername = greetingText.includes("{username}");
-    if (hasDisplay && hasUsername) greetingText = greetingText.replaceAll("{username}", "");
-    if (hasDisplay) greetingText = greetingText.replaceAll("{displayName}", displayNameValue);
-    if (!hasDisplay && hasUsername) greetingText = greetingText.replaceAll("{username}", userNameValue);
+  // Combine special messages
+  let messageText = "";
+  if (messages.length === 1) messageText = messages[0] + "!";
+  else if (messages.length === 2) messageText = `${messages[0]} and ${messages[1]}!`;
+  else if (messages.length > 2) messageText = messages.slice(0, -1).join(", ") + `, and ${messages[messages.length - 1]}!`;
+  else messageText = "purrr"; // default if no special message
 
-    greetingText = greetingText
-      .replace(/\s+,/g, ",")
-      .replace(/,\s+/g, ", ")
-      .replace(/\s{2,}/g, " ")
-      .trim();
-  }
+  // -------------------------
+  // Replace displayName / username in greetingText
+  // -------------------------
+  const hasDisplay = greetingText.includes("{displayName}");
+  const hasUsername = greetingText.includes("{username}");
+  if (hasDisplay && hasUsername) greetingText = greetingText.replaceAll("{username}", "");
+  if (hasDisplay) greetingText = greetingText.replaceAll("{displayName}", displayNameValue);
+  if (!hasDisplay && hasUsername) greetingText = greetingText.replaceAll("{username}", userNameValue);
+
+  greetingText = greetingText
+    .replace(/\s+,/g, ",")
+    .replace(/,\s+/g, ", ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 
   // -------------------------
   // Render header
@@ -157,10 +156,13 @@ async function injectHomeHeader() {
 
   oldSection.replaceWith(newDiv);
 
+  // Set content
   newDiv.querySelector(".profile-image").src = headshotURL;
   newDiv.querySelector("#greeting").textContent = greetingText;
   newDiv.querySelector("#username").textContent = "@" + userRes.name;
+  newDiv.querySelector("#message").textContent = messageText;
 
+  // Show badges
   const isVerified = userRes.hasVerifiedBadge;
   const hasPremium = await fetchRoblox.getUserPremium();
 
