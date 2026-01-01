@@ -3,8 +3,8 @@
 **Blur** is a Roblox browser extension designed to hide content you may not want to see and improve your Roblox experience.
 
 ## Features
-- **Best Friends** – Customize and manage your friends carousel.  
-- **Home Greeting** – Personalize your homepage greeting message.  
+- **Best Friends**
+- **Home Greeting**
 
 ## How to Use the Extension
 
@@ -16,7 +16,7 @@
 5. Open Roblox in your browser and enjoy the refined experience.
 
 ### Firefox
-- No instructions yet.
+No instructions yet.
 
 ---
 Made with ♡ by Novix.
