@@ -1,5 +1,5 @@
 import { waitForSelector } from "../helpers/elements.js";
-import { makeFriendCardHTML } from "./cards.js";
+import { makeFriendCardHTML } from "../helpers/cards.js";
 import { Storage } from "../helpers/storage.js";
 import { fetchRoblox } from "../helpers/robloxAPI.js";
 
