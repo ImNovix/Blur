@@ -11,6 +11,7 @@ export class Storage {
     this.area = area;
 
     this.DEFAULTS = {
+      showUnreleasedVersionNotice: true,
       hideFriendStatus: false,
       removeConnectButton: true,
       renameConnectionsToFriends: true,
