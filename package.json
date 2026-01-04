@@ -1,0 +1,17 @@
+{
+  "name": "blur",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build/complie-pages.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.19.0"
+  },
+  "dependencies": {
+    "@babel/generator": "^7.28.5",
+    "@babel/parser": "^7.28.5",
+    "@babel/traverse": "^7.28.5"
+  }
+}

@@ -1,6 +1,6 @@
 import { waitForSelector } from "../helpers/elements.js";
 import { Storage } from "../helpers/storage.js";
-import { makeFriendCardSmall, makeFriendDropdown } from "./cards.js";
+import { makeFriendCardSmall, makeFriendDropdown } from "../helpers/cards.js";
 import { fetchRoblox } from "../helpers/robloxAPI.js";
 import { premiumLogo, verifiedLogo } from "../constaints/logos.js";
 
