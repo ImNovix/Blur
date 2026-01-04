@@ -6,3 +6,5 @@ build/
 dist/
 test*
 node_modules/
+package.json
+package-lock.json

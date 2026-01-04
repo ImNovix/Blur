@@ -1,4 +1,4 @@
-function waitForSelector(selector, timeout = 10000) {
+export function waitForSelector(selector, timeout = 10000) {
     return new Promise(resolve => {
         const el = document.querySelector(selector);
         if (el) return resolve(el);
@@ -23,14 +23,4 @@ function waitForSelector(selector, timeout = 10000) {
             }, timeout);
         }
     });
-}
-
-async function replaceElement(selector, newElement) {
-    const target = await waitForSelector(selector);
-    target.replaceWith(newElement);
-}
-
-export {
-    waitForSelector,
-    replaceElement
 }
