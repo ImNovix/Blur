@@ -5,7 +5,7 @@ export class fetchRoblox {
     }
 
     static async getUserBirthday() {
-        return await fetchRobloxAPI(`https://users.roblox.com/v1/birthdate`)
+        return await fetchRobloxAPI(`https://users.roblox.com/v1/birthdate`);
     }
 
     // Friends
@@ -13,7 +13,7 @@ export class fetchRoblox {
         if (userID === "0") {
             return await fetchRobloxAPI(`https://friends.roblox.com/v1/my/friends/count`);
         } else {
-            return (await fetchRobloxAPI(`https://friends.roblox.com/v1/users/${userID}/friends/count`))
+            return await fetchRobloxAPI(`https://friends.roblox.com/v1/users/${userID}/friends/count`);
         }
     }
 
@@ -21,12 +21,12 @@ export class fetchRoblox {
         if (userID === "0") {
             userID = (await fetchRoblox.getAuth()).id;
         }
-        return (await fetchRobloxAPI(`https://friends.roblox.com/v1/users/${userID}/friends`));
+        return await fetchRobloxAPI(`https://friends.roblox.com/v1/users/${userID}/friends`);
     }
 
     static async getSuggestedFriends() {
         const authID = (await fetchRoblox.getAuth()).id;
-        return await fetchRobloxAPI(`https://friends.roblox.com/v1/users/${authID}/friends/recommendations?source=AddFriendsPage`)
+        return await fetchRobloxAPI(`https://friends.roblox.com/v1/users/${authID}/friends/recommendations?source=AddFriendsPage`);
     }
 
     static async getMutualFriends(userID) {
@@ -84,10 +84,29 @@ export class fetchRoblox {
             const { seconds, nanos } = friendshipInsight.friendshipAgeInsight.friendsSinceDateTime;
             const friendsSince = new Date(seconds * 1000 + nanos / 1e6);
 
-            // Format with full month name + ordinal + year
-            const formatted = formatFriendsSince(friendsSince);
+            // Scoped formatting function
+            const formatFriendsSince = (date) => {
+                if (!(date instanceof Date)) return date;
 
-            return formatted;
+                const day = date.getDate();
+                const year = date.getFullYear();
+                const month = date.toLocaleString(undefined, { month: "long" });
+
+                const getOrdinal = (n) => {
+                    if (n >= 11 && n <= 13) return "th";
+                    switch (n % 10) {
+                        case 1: return "st";
+                        case 2: return "nd";
+                        case 3: return "rd";
+                        default: return "th";
+                    }
+                };
+
+                return `${month} ${day}${getOrdinal(day)}, ${year}`;
+            };
+
+            return formatFriendsSince(friendsSince);
+
         } catch (err) {
             console.error("Failed to fetch friendship duration:", err);
             return "Unknown";
@@ -194,24 +213,4 @@ async function fetchRobloxAPI(url, options = {}) {
     }
 
     throw new Error("Failed to fetch with valid CSRF token");
-}
-
-function formatFriendsSince(date) {
-    if (!(date instanceof Date)) return date;
-
-    const day = date.getDate();
-    const year = date.getFullYear();
-    const month = date.toLocaleString(undefined, { month: "long" });
-
-    const getOrdinal = (n) => {
-        if (n >= 11 && n <= 13) return "th";
-        switch (n % 10) {
-            case 1: return "st";
-            case 2: return "nd";
-            case 3: return "rd";
-            default: return "th";
-        }
-    };
-
-    return `${month} ${day}${getOrdinal(day)}, ${year}`;
 }
