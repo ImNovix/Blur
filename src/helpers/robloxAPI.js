@@ -1,4 +1,32 @@
 export class fetchRoblox {
+    static defults = {
+        thumbnails: {
+            userHeadshot: {
+                size: [
+                    '48x48',
+                    '50x50',
+                    '60x60',
+                    '75x75',
+                    '100x100',
+                    '110x110',
+                    '150x150',
+                    '180x180',
+                    '352x352',
+                    '720x720'
+                ],
+                format: [
+                    'Png',
+                    'Jpeg',
+                    'Webp'
+                ],
+                isCircular: [
+                    'true',
+                    'false'
+                ]
+            }
+        }
+    };
+
     // Account Details
     static async getAuth() {
         return await fetchRobloxAPI("https://users.roblox.com/v1/users/authenticated");
@@ -156,16 +184,42 @@ export class fetchRoblox {
     static async getUserHeadshot(userID = "0", size="150x150", format="Png", isCircular="false") {
         if (userID === "0") {
             userID = (await fetchRoblox.getAuth()).id;
-            const res = await fetchRobloxAPI(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userID}&size=${size}&format=${format}&isCircular=${isCircular}`);
-            return res.data[0];
-        } else {
-            const res = await fetchRobloxAPI(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userID}&size=${size}&format=${format}&isCircular=${isCircular}`);
-            return res.data[0];
         }
+        const res = await fetchRobloxAPI(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userID}&size=${size}&format=${format}&isCircular=${isCircular}`);
+        return res.data[0];
     }
 
     static async getUniverseIcon(universeID, size="150x150", format="Png", isCircular="false") {
         return (await fetchRobloxAPI(`https://thumbnails.roblox.com/v1/games/icons?universeIds=${universeID}&size=${size}&format=${format}&isCircular=${isCircular}`)).data[0];
+    }
+
+    static async getOutfitThumbnail(outfitID, size, format, isCircular) {
+        return await fetchRobloxAPI(``);
+    }
+
+    // Avatar
+    static async getUsersAvatar(userID) {
+        const res = await fetchRobloxAPI(`https://avatar.roblox.com/v1/users/${userID}/avatar`);
+        const assets = '';
+        const animations = '';
+        const emotes = ''; 
+
+        return {
+            playerAvatarType: res.playerAvatarType,
+            scales: res.scales,
+            bodyColors: res.bodyColors,
+            assets,
+            animations,
+            emotes
+        }
+    }
+
+    static async getOutfitDetails(outfitID) {
+        return await fetchRobloxAPI(`https://avatar.roblox.com/v3/outfits/${outfitID}/details`);
+    }
+
+    static async getUserOutfits(userID) {
+
     }
 }
 
