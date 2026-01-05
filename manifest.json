@@ -3,6 +3,7 @@
   "name": "Blur",
   "description": "Blur the Noise",
   "version": "1.0.0",
+  "version_name": "Dev - 1.0.0",
   "permissions": [
     "storage",
     "activeTab",
