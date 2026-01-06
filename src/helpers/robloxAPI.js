@@ -1,11 +1,39 @@
 export class fetchRoblox {
+    static defults = {
+        thumbnails: {
+            userHeadshot: {
+                size: [
+                    '48x48',
+                    '50x50',
+                    '60x60',
+                    '75x75',
+                    '100x100',
+                    '110x110',
+                    '150x150',
+                    '180x180',
+                    '352x352',
+                    '720x720'
+                ],
+                format: [
+                    'Png',
+                    'Jpeg',
+                    'Webp'
+                ],
+                isCircular: [
+                    'true',
+                    'false'
+                ]
+            }
+        }
+    };
+
     // Account Details
     static async getAuth() {
         return await fetchRobloxAPI("https://users.roblox.com/v1/users/authenticated");
     }
 
     static async getUserBirthday() {
-        return await fetchRobloxAPI(`https://users.roblox.com/v1/birthdate`)
+        return await fetchRobloxAPI(`https://users.roblox.com/v1/birthdate`);
     }
 
     // Friends
@@ -13,7 +41,7 @@ export class fetchRoblox {
         if (userID === "0") {
             return await fetchRobloxAPI(`https://friends.roblox.com/v1/my/friends/count`);
         } else {
-            return (await fetchRobloxAPI(`https://friends.roblox.com/v1/users/${userID}/friends/count`))
+            return await fetchRobloxAPI(`https://friends.roblox.com/v1/users/${userID}/friends/count`);
         }
     }
 
@@ -21,12 +49,12 @@ export class fetchRoblox {
         if (userID === "0") {
             userID = (await fetchRoblox.getAuth()).id;
         }
-        return (await fetchRobloxAPI(`https://friends.roblox.com/v1/users/${userID}/friends`));
+        return await fetchRobloxAPI(`https://friends.roblox.com/v1/users/${userID}/friends`);
     }
 
     static async getSuggestedFriends() {
         const authID = (await fetchRoblox.getAuth()).id;
-        return await fetchRobloxAPI(`https://friends.roblox.com/v1/users/${authID}/friends/recommendations?source=AddFriendsPage`)
+        return await fetchRobloxAPI(`https://friends.roblox.com/v1/users/${authID}/friends/recommendations?source=AddFriendsPage`);
     }
 
     static async getMutualFriends(userID) {
@@ -84,10 +112,29 @@ export class fetchRoblox {
             const { seconds, nanos } = friendshipInsight.friendshipAgeInsight.friendsSinceDateTime;
             const friendsSince = new Date(seconds * 1000 + nanos / 1e6);
 
-            // Format with full month name + ordinal + year
-            const formatted = formatFriendsSince(friendsSince);
+            // Scoped formatting function
+            const formatFriendsSince = (date) => {
+                if (!(date instanceof Date)) return date;
 
-            return formatted;
+                const day = date.getDate();
+                const year = date.getFullYear();
+                const month = date.toLocaleString(undefined, { month: "long" });
+
+                const getOrdinal = (n) => {
+                    if (n >= 11 && n <= 13) return "th";
+                    switch (n % 10) {
+                        case 1: return "st";
+                        case 2: return "nd";
+                        case 3: return "rd";
+                        default: return "th";
+                    }
+                };
+
+                return `${month} ${day}${getOrdinal(day)}, ${year}`;
+            };
+
+            return formatFriendsSince(friendsSince);
+
         } catch (err) {
             console.error("Failed to fetch friendship duration:", err);
             return "Unknown";
@@ -137,16 +184,42 @@ export class fetchRoblox {
     static async getUserHeadshot(userID = "0", size="150x150", format="Png", isCircular="false") {
         if (userID === "0") {
             userID = (await fetchRoblox.getAuth()).id;
-            const res = await fetchRobloxAPI(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userID}&size=${size}&format=${format}&isCircular=${isCircular}`);
-            return res.data[0];
-        } else {
-            const res = await fetchRobloxAPI(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userID}&size=${size}&format=${format}&isCircular=${isCircular}`);
-            return res.data[0];
         }
+        const res = await fetchRobloxAPI(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userID}&size=${size}&format=${format}&isCircular=${isCircular}`);
+        return res.data[0];
     }
 
     static async getUniverseIcon(universeID, size="150x150", format="Png", isCircular="false") {
         return (await fetchRobloxAPI(`https://thumbnails.roblox.com/v1/games/icons?universeIds=${universeID}&size=${size}&format=${format}&isCircular=${isCircular}`)).data[0];
+    }
+
+    static async getOutfitThumbnail(outfitID, size, format, isCircular) {
+        return await fetchRobloxAPI(``);
+    }
+
+    // Avatar
+    static async getUsersAvatar(userID) {
+        const res = await fetchRobloxAPI(`https://avatar.roblox.com/v1/users/${userID}/avatar`);
+        const assets = '';
+        const animations = '';
+        const emotes = ''; 
+
+        return {
+            playerAvatarType: res.playerAvatarType,
+            scales: res.scales,
+            bodyColors: res.bodyColors,
+            assets,
+            animations,
+            emotes
+        }
+    }
+
+    static async getOutfitDetails(outfitID) {
+        return await fetchRobloxAPI(`https://avatar.roblox.com/v3/outfits/${outfitID}/details`);
+    }
+
+    static async getUserOutfits(userID) {
+
     }
 }
 
@@ -194,24 +267,4 @@ async function fetchRobloxAPI(url, options = {}) {
     }
 
     throw new Error("Failed to fetch with valid CSRF token");
-}
-
-function formatFriendsSince(date) {
-    if (!(date instanceof Date)) return date;
-
-    const day = date.getDate();
-    const year = date.getFullYear();
-    const month = date.toLocaleString(undefined, { month: "long" });
-
-    const getOrdinal = (n) => {
-        if (n >= 11 && n <= 13) return "th";
-        switch (n % 10) {
-            case 1: return "st";
-            case 2: return "nd";
-            case 3: return "rd";
-            default: return "th";
-        }
-    };
-
-    return `${month} ${day}${getOrdinal(day)}, ${year}`;
 }
