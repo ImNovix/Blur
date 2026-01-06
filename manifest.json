@@ -23,7 +23,8 @@
     }
   ],
   "host_permissions": [
-    "https://*.roblox.com/*"
+    "https://*.roblox.com/*",
+    "https://*.rbxcdn.com/"
   ],
   "web_accessible_resources": [
     {

@@ -22,35 +22,27 @@ function injectUnreleasedVersionPopup() {
   popup.innerHTML = `
     <div style="
       position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,.45);
-      z-index: 999998;
-    "></div>
-
-    <div style="
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+      bottom: 16px;
+      left: 16px;
       z-index: 999999;
       background: #111;
       color: #fff;
-      padding: 18px 20px;
+      padding: 16px 18px;
       border-radius: 10px;
       font-family: system-ui, sans-serif;
       font-size: 14px;
       box-shadow: 0 8px 30px rgba(0,0,0,.45);
-      width: 420px;
+      width: 360px;
       max-width: calc(100vw - 32px);
     ">
       <strong style="font-size: 15px;">Blur — Unreleased Version</strong>
 
-      <div style="margin-top: 10px; opacity: .85;">
+      <div style="margin-top: 8px; opacity: .85;">
         Looks like you’re using an unreleased version of Blur.<br>
         Some features may be unstable or incomplete.
       </div>
 
-      <div style="margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px;">
+      <div style="margin-top: 14px; display: flex; justify-content: flex-end;">
         <button id="close-unreleased" style="
           background: #2b7cff;
           border: none;
@@ -68,6 +60,7 @@ function injectUnreleasedVersionPopup() {
 
   document.body.appendChild(popup);
 }
+
 
 /** Adds a toggle to hide friends' status */
 async function hideFriendsStatus() {

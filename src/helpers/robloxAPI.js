@@ -1,32 +1,4 @@
 export class fetchRoblox {
-    static defults = {
-        thumbnails: {
-            userHeadshot: {
-                size: [
-                    '48x48',
-                    '50x50',
-                    '60x60',
-                    '75x75',
-                    '100x100',
-                    '110x110',
-                    '150x150',
-                    '180x180',
-                    '352x352',
-                    '720x720'
-                ],
-                format: [
-                    'Png',
-                    'Jpeg',
-                    'Webp'
-                ],
-                isCircular: [
-                    'true',
-                    'false'
-                ]
-            }
-        }
-    };
-
     // Account Details
     static async getAuth() {
         return await fetchRobloxAPI("https://users.roblox.com/v1/users/authenticated");
@@ -198,6 +170,9 @@ export class fetchRoblox {
     }
 
     // Avatar
+    static async renderAvatar() {
+
+    }
     static async getUsersAvatar(userID) {
         const res = await fetchRobloxAPI(`https://avatar.roblox.com/v1/users/${userID}/avatar`);
         const assets = '';
@@ -213,6 +188,28 @@ export class fetchRoblox {
             emotes
         }
     }
+
+    static async getUsers3dAvatar(userID) {
+        // 1. Get the avatar metadata (Needs cookies/auth, so we use the default 'include')
+        const resText = await fetchRobloxAPI(`https://thumbnails.roblox.com/v1/users/avatar-3d?userId=${userID}`);
+        const res = typeof resText === "string" ? JSON.parse(resText) : resText;
+
+        if (!res.imageUrl) throw new Error("No 3D avatar URL returned");
+
+        // 2. Get the actual OBJ/JSON file from the CDN
+        // FIX: We pass credentials: 'omit' here to solve the CORS error
+        const txt = await fetchRobloxAPI(res.imageUrl, {
+            method: "GET",
+            credentials: 'omit', 
+            headers: {
+                'Accept': 'text/plain'
+            }
+        });
+
+        const avatarJSON = typeof txt === "string" ? JSON.parse(txt) : txt;
+        return avatarJSON;
+    }
+
 
     static async getOutfitDetails(outfitID) {
         return await fetchRobloxAPI(`https://avatar.roblox.com/v3/outfits/${outfitID}/details`);
@@ -230,7 +227,7 @@ async function fetchRobloxAPI(url, options = {}) {
     let headers = { ...(options.headers || {}) };
     let attempt = 0;
 
-    // If it's a POST/PUT/PATCH/DELETE, pre-include the CSRF token from options or empty string
+    // If it's a POST/PUT/PATCH/DELETE, pre-include the CSRF token
     if (isPost && !headers['X-CSRF-TOKEN']) {
         headers['X-CSRF-TOKEN'] = ''; // Roblox will return a new token if empty/invalid
         headers['Content-Type'] = 'application/json';
@@ -241,10 +238,12 @@ async function fetchRobloxAPI(url, options = {}) {
             ...options,
             method,
             headers,
-            credentials: 'include'
+            // FIX: Allow options to override credentials. 
+            // Defaults to 'include' for Roblox APIs, but allows 'omit' for CDNs.
+            credentials: options.credentials || 'include'
         });
 
-        // Roblox returns 403 with x-csrf-token header if CSRF token is missing or invalid
+        // Handle CSRF Token refresh logic
         if (response.status === 403 && isPost) {
             const csrfToken = response.headers.get('x-csrf-token');
             if (csrfToken && attempt === 0) {
