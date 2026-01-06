@@ -165,14 +165,11 @@ export class fetchRoblox {
         return (await fetchRobloxAPI(`https://thumbnails.roblox.com/v1/games/icons?universeIds=${universeID}&size=${size}&format=${format}&isCircular=${isCircular}`)).data[0];
     }
 
-    static async getOutfitThumbnail(outfitID, size, format, isCircular) {
-        return await fetchRobloxAPI(``);
+    static async getOutfitThumbnail(outfitIds, size, format, isCircular) {
+        return await fetchRobloxAPI(`https://thumbnails.roblox.com/v1/users/outfits?userOutfitIds=${outfitIds}&size=420x420&format=Png&isCircular=false`);
     }
 
     // Avatar
-    static async renderAvatar() {
-
-    }
     static async getUsersAvatar(userID) {
         const res = await fetchRobloxAPI(`https://avatar.roblox.com/v1/users/${userID}/avatar`);
         const assets = '';
@@ -216,7 +213,52 @@ export class fetchRoblox {
     }
 
     static async getUserOutfits(userID) {
+        // Fetch outfit list
+        const outfitRes = await fetchRobloxAPI(
+            `https://avatar.roblox.com/v2/avatar/users/${userID}/outfits?page=1&itemsPerPage=25&isEditable=true`
+        );
 
+        const outfits = outfitRes.data;
+
+        // Build ID list for thumbnails
+        const ids = outfits.map(o => o.id).join(",");
+
+        // Fetch thumbnails
+        const thumbRes = await fetchRoblox.getOutfitThumbnail(ids);
+
+        // Build map: outfitId → imageUrl
+        const thumbnailMap = new Map();
+        thumbRes.data.forEach(t => {
+            thumbnailMap.set(t.targetId, t.imageUrl);
+        });
+
+        // Fetch deep details for every outfit in parallel
+        const detailed = await Promise.all(
+            outfits.map(async outfit => {
+                const details = await fetchRoblox.getOutfitDetails(outfit.id);
+
+                return {
+                    // Base outfit metadata
+                    id: outfit.id,
+                    name: outfit.name,
+                    isEditable: outfit.isEditable,
+                    outfitType: outfit.outfitType,
+
+                    // Thumbnail
+                    thumbnail: thumbnailMap.get(outfit.id) || null,
+
+                    // Full avatar configuration
+                    assets: details.assets,
+                    bodyColor3s: details.bodyColor3s,
+                    scale: details.scale,
+                    playerAvatarType: details.playerAvatarType,
+                    universeId: details.universeId,
+                    inventoryType: details.inventoryType
+                };
+            })
+        );
+
+        return detailed;
     }
 }
 
