@@ -169,44 +169,88 @@ export class fetchRoblox {
         return await fetchRobloxAPI(`https://thumbnails.roblox.com/v1/users/outfits?userOutfitIds=${outfitIds}&size=420x420&format=Png&isCircular=false`);
     }
 
+    static async getAssetThumbnail(assetIds, size, format, isCircular) {
+        return await fetchRobloxAPI(`https://thumbnails.roblox.com/v1/assets?assetIds=${assetIds}&returnPolicy=PlaceHolder&size=420x420&format=Png&isCircular=false`)
+    }
+
     // Avatar
     static async getUsersAvatar(userID) {
-        const res = await fetchRobloxAPI(`https://avatar.roblox.com/v1/users/${userID}/avatar`);
-        const assets = '';
-        const animations = '';
-        const emotes = ''; 
+        // Fetch raw avatar data
+        const res = await fetchRobloxAPI(`https://avatar.roblox.com/v2/avatar/users/${userID}/avatar`);
+        const allAssets = res.assets || [];
+        const emotes = res.emotes || [];
+
+        // Define animation types
+        const animationTypes = new Set([
+            "IdleAnimation",
+            "RunAnimation",
+            "JumpAnimation",
+            "WalkAnimation",
+            "FallAnimation"
+        ]);
+
+        const animations = [];
+        const assets = [];
+
+        // Separate assets and animations (MoodAnimation stays in assets)
+        allAssets.forEach(a => {
+            if (animationTypes.has(a.assetType?.name)) {
+                animations.push(a);
+            } else {
+                assets.push(a);
+            }
+        });
+
+        // Combine all IDs to fetch thumbnails & prices
+        const allIds = [
+            ...assets.map(a => a.id),
+            ...animations.map(a => a.id),
+            ...emotes.map(e => e.assetId)
+        ];
+
+        // Fetch thumbnails
+        const thumbsRes = allIds.length 
+            ? await fetchRoblox.getAssetThumbnail(allIds.join(",")) 
+            : { data: [] };
+
+        const thumbMap = new Map();
+        (thumbsRes.data || []).forEach(t => {
+            thumbMap.set(t.targetId, t.imageUrl); // <-- use targetId, not assetId
+        });
+
+        // Fetch prices
+        const detailsRes = allIds.length ? await fetchRoblox.getAssetDetails(allIds.join(",")) : { data: [] };
+        const priceMap = new Map();
+        (detailsRes.data || []).forEach(d => priceMap.set(d.id, d.price || 0));
+
+        // Enrich assets
+        const enrichedAssets = assets.map(a => ({
+            ...a,
+            thumbnail: thumbMap.get(a.id) || null,
+            price: priceMap.get(a.id) || 0
+        }));
+
+        const enrichedAnimations = animations.map(a => ({
+            ...a,
+            thumbnail: thumbMap.get(a.id) || null,
+            price: priceMap.get(a.id) || 0
+        }));
+
+        const enrichedEmotes = emotes.map(e => ({
+            ...e,
+            thumbnail: thumbMap.get(e.assetId) || null,
+            price: priceMap.get(e.assetId) || 0
+        }));
 
         return {
             playerAvatarType: res.playerAvatarType,
             scales: res.scales,
-            bodyColors: res.bodyColors,
-            assets,
-            animations,
-            emotes
-        }
+            bodyColor3s: res.bodyColor3s,
+            assets: enrichedAssets,
+            animations: enrichedAnimations,
+            emotes: enrichedEmotes
+        };
     }
-
-    static async getUsers3dAvatar(userID) {
-        // 1. Get the avatar metadata (Needs cookies/auth, so we use the default 'include')
-        const resText = await fetchRobloxAPI(`https://thumbnails.roblox.com/v1/users/avatar-3d?userId=${userID}`);
-        const res = typeof resText === "string" ? JSON.parse(resText) : resText;
-
-        if (!res.imageUrl) throw new Error("No 3D avatar URL returned");
-
-        // 2. Get the actual OBJ/JSON file from the CDN
-        // FIX: We pass credentials: 'omit' here to solve the CORS error
-        const txt = await fetchRobloxAPI(res.imageUrl, {
-            method: "GET",
-            credentials: 'omit', 
-            headers: {
-                'Accept': 'text/plain'
-            }
-        });
-
-        const avatarJSON = typeof txt === "string" ? JSON.parse(txt) : txt;
-        return avatarJSON;
-    }
-
 
     static async getOutfitDetails(outfitID) {
         return await fetchRobloxAPI(`https://avatar.roblox.com/v3/outfits/${outfitID}/details`);
@@ -252,13 +296,42 @@ export class fetchRoblox {
                     bodyColor3s: details.bodyColor3s,
                     scale: details.scale,
                     playerAvatarType: details.playerAvatarType,
-                    universeId: details.universeId,
                     inventoryType: details.inventoryType
                 };
             })
         );
 
         return detailed;
+    }
+
+    // Assets
+    static async getAssetDetails(assetIds) {
+        if (!Array.isArray(assetIds)) {
+            // If you passed a comma-separated string, split it
+            assetIds = assetIds.split(",").map(id => id.trim());
+        }
+
+        // Build the POST body in the format Roblox expects
+        const body = {
+            items: assetIds.map(id => ({
+                itemType: "Asset",
+                id: Number(id)
+            }))
+        };
+
+        // Call the API
+        const res = await fetchRobloxAPI(
+            "https://catalog.roblox.com/v1/catalog/items/details",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(body)
+            }
+        );
+
+        return res;
     }
 }
 
