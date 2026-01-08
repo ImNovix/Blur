@@ -29,7 +29,8 @@ const pageFeatures = [
   },
   {
     url: "roblox.com/users/*/profile",
-    scripts: ["src/pages/profile.js"]
+    scripts: ["src/pages/profile.js"],
+    styles: ["src/pages/css/profile.css"]
   }
 ];
 

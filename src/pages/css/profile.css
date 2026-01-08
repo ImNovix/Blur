@@ -1,0 +1,161 @@
+#cw-root { 
+    width:100%; 
+    margin-bottom:24px; 
+    font-family:'HCo Gotham SSm',sans-serif;
+}
+
+.cw-card { 
+    display:flex; 
+    gap:20px;
+    padding:16px; 
+    border-radius:14px; 
+    background:#0f0f0f; 
+    border:1px solid #1f1f1f; 
+    color:#fff;
+}
+
+.cw-left { 
+    width:280px; 
+    flex-shrink:0; 
+}
+
+.cw-avatar { 
+    width:100%; 
+    border-radius:12px; 
+    background:#080808; 
+    overflow:hidden; 
+    border:1px solid #1a1a1a; 
+    min-height:280px; 
+    position:relative; 
+}
+
+.cw-avatar img { 
+    width:100%; 
+    display:block; 
+    transition: opacity 0.3s; 
+}
+
+#cw-avatar-viewport { 
+    width:100%; 
+    height:100%; 
+    display:none; 
+}
+
+#cw-toggle-2d, #cw-toggle-3d { 
+    position:absolute; 
+    bottom:8px; 
+    left:8px; 
+    padding:4px 8px; 
+    font-size:10px; 
+}
+
+.cw-right { 
+    flex:1; 
+    display:flex; 
+    flex-direction:column; 
+    overflow:hidden; 
+}
+
+.cw-header-row { 
+    display:flex; 
+    justify-content:space-between; 
+    align-items:center; 
+    margin-bottom:20px; 
+}
+
+.cw-title-group { 
+    display:flex; 
+    align-items:center; 
+    gap:6px; 
+}
+
+.cw-title { 
+    font-size:18px; 
+    font-weight:600; 
+}
+
+.cw-value { 
+    font-size:16px; 
+    font-weight:700; 
+    display:flex; 
+    align-items:center; 
+    gap:4px; 
+}
+
+.cw-tabs-container { 
+    position:relative; 
+    display:flex; 
+    background:#161616; 
+    padding:3px; 
+    border-radius:9px; 
+    border:1px solid #222; 
+}
+
+.cw-tab { 
+    z-index:2; 
+    padding:6px 16px; 
+    font-size:12px; 
+    color:#888; 
+    cursor:pointer; 
+    min-width:85px; 
+    text-align:center; 
+}
+
+.cw-tab.active { 
+    color:#fff; 
+}
+
+.cw-slider { 
+    position:absolute;
+    top:3px; 
+    left:3px; 
+    height:calc(100%-6px); 
+    background:rgba(255,255,255,0.1); 
+    border-radius:7px; 
+    transition:all 0.25s ease; 
+    z-index:1; 
+}
+
+.cw-page { 
+    display:none; 
+    height:240px; 
+    overflow-y:auto; 
+}
+
+.cw-page.active { 
+    display:block; 
+}
+
+.cw-grid { 
+    display:grid; 
+    grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); 
+    gap:12px; 
+}
+
+.cw-item { 
+    background:#161616; 
+    border:1px solid #222; 
+    border-radius:10px; 
+    padding:8px; 
+    color:#fff; 
+    text-decoration:none; 
+}
+
+.cw-item img { 
+    width:100%; 
+    aspect-ratio:1/1;
+    border-radius:6px; 
+    margin-bottom:6px; 
+}
+
+.cw-item-name { 
+    font-size:11px; 
+    white-space:nowrap; 
+    overflow:hidden; 
+    text-overflow:ellipsis; 
+}
+
+.cw-item-price { 
+    font-size:10px; 
+    opacity:0.75; 
+}
