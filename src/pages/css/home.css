@@ -1,9 +1,10 @@
-.blur-hide-friend-status .avatar-status {
-    display: none !important;
-}
+/* Hide unwanted elements */
+.blur-hide-friend-status .avatar-status,
 .blur-hide-friend-status .friends-carousel-tile-experience {
     display: none !important;
 }
+
+/* Header layout */
 .header {
     display: flex;
     align-items: center;
@@ -20,23 +21,24 @@
     flex-direction: column;
     margin-left: 20px;
 }
+
+/* Header text sizes */
 .header-text h1 {
     margin: 0;
     font-size: 22px;
-    color: white;
     line-height: 1;
 }
 .header-text h2 {
     margin: 0 0 4px 0;
     font-size: 16px;
-    color: #bfbfbf;
     line-height: 1;
 }
 .header-text h3 {
     margin-top: 0;
     font-size: 16px;
-    color: #c8c8c8;
 }
+
+/* Name row & badges */
 .name-row {
     display: flex;
     align-items: center;
@@ -47,3 +49,13 @@
     width: 24px; 
     height: 24px;
 }
+
+/* -------------------- THEME COLORS -------------------- */
+.light-theme .header-text h1 { color: black !important; }
+.dark-theme .header-text h1 { color: white !important; }
+
+.light-theme .header-text h2,
+.light-theme .header-text h3 { color: #6d6d6d !important; }
+
+.dark-theme .header-text h2,
+.dark-theme .header-text h3 { color: #bfbfbf !important; }

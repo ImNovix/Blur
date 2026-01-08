@@ -80,12 +80,21 @@ async function injectCSS(path) {
   if (!extensionURLAvailable || loadedStyles.has(path)) return;
 
   console.time(`[Blur DEV] Inject CSS ${path}`);
+
   const head = await waitForNode("head");
-  const link = document.createElement("link");
-  link.rel = "stylesheet";
-  link.href = extensionURL + path;
-  head.appendChild(link);
+
+  // Fetch the CSS file
+  const res = await fetch(extensionURL + path);
+  const css = await res.text();
+
+  // Inject as <style> so it always wins the cascade
+  const style = document.createElement("style");
+  style.setAttribute("data-blur-style", path);
+  style.textContent = css;
+
+  head.appendChild(style);
   loadedStyles.add(path);
+
   console.timeEnd(`[Blur DEV] Inject CSS ${path}`);
 }
 
