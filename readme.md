@@ -20,21 +20,3 @@ No instructions yet.
 
 ---
 Made with ♡ by Novix.
-
-## Development
-
-Compile a single-file distribution used for the precompiled build in `blur-selfcomplied/src/oneFile.js`:
-
-1. Install dev dependencies:
-
-```
-npm install
-```
-
-2. Run the compiler:
-
-```
-npm run compile:onefile
-```
-
-This bundles `src/injecter.js` and all imports, and inlines CSS from `src/pages/css` as `*CSS` constants as well as constants exported by `src/constaints/logos.js`.
