@@ -62,15 +62,11 @@ async function updateSocialRow() {
 
 async function injectCurrentlyWearing() {
     console.log("[CW] injectCurrentlyWearing() called");
-    console.log("[CW] userID =", userID);
 
-    // Prevent double-mount
     if (document.getElementById("cw-root")) {
         console.log("[CW] cw-root already exists. Skipping.");
         return;
     }
-
-    console.log("[CW] Waiting for Roblox .profile-currently-wearing…");
 
     const robloxSlot = await new Promise(resolve => {
         const existing = document.querySelector(".profile-currently-wearing");
@@ -87,51 +83,56 @@ async function injectCurrentlyWearing() {
         obs.observe(document.body, { childList: true, subtree: true });
     });
 
-    console.log("[CW] Found Roblox slot:", robloxSlot);
-
-    // Freeze Angular
     robloxSlot.removeAttribute("ng-if");
     robloxSlot.removeAttribute("ng-show");
     robloxSlot.removeAttribute("ng-hide");
-
-    // Wipe Roblox UI
     robloxSlot.innerHTML = "";
 
-    // Create our root
     const root = document.createElement("section");
     root.id = "cw-root";
     robloxSlot.appendChild(root);
 
-    console.log("[CW] Roblox slot hijacked");
+    /* ================= UI ================= */
 
-    // ================= UI =================
     root.innerHTML = `
+    <style>
+        .cw-avatar { position:relative; width:100%; border-radius:12px; background:#080808; border:1px solid #1a1a1a; min-height:280px; display:flex; align-items:center; justify-content:center; }
+        .cw-avatar img { width:100%; border-radius:12px; display:block; transition:opacity .3s; }
+        .cw-avatar button { position:absolute; bottom:8px; padding:4px 10px; font-size:12px; background:#1a1a1a; color:#fff; border:none; border-radius:6px; cursor:pointer; }
+        #cw-toggle-bust { left:8px; }
+        #cw-toggle-full { right:8px; }
+
+        .cw-placeholder { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:13px; color:#888; }
+    </style>
+
     <div class="cw-card">
         <div class="cw-left">
             <div class="cw-avatar">
-                <div id="cw-avatar-viewport"></div>
-                <img id="cw-avatar-2d" style="opacity:1">
-                <button id="cw-toggle-2d">2D</button>
-                <button id="cw-toggle-3d">3D</button>
+                <div id="cw-placeholder-bust" class="cw-placeholder">Loading Bust…</div>
+                <img id="cw-bust-img" style="opacity:0">
+
+                <div id="cw-placeholder-full" class="cw-placeholder" style="display:none">Loading Fullbody…</div>
+                <img id="cw-full-img" style="opacity:0; display:none">
+
+                <button id="cw-toggle-bust">Bust</button>
+                <button id="cw-toggle-full">Fullbody</button>
             </div>
         </div>
+
         <div class="cw-right">
             <div class="cw-header-row">
-                <div class="cw-title-group">
-                    <div class="cw-title">Currently Wearing</div>
-                    <div class="cw-value">
-                        <span class="icon-robux-16x16"></span>
-                        <span id="cw-total-price">...</span>
-                    </div>
-                </div>
-                <div class="cw-tabs-container">
-                    <div class="cw-slider"></div>
-                    <div class="cw-tab active" data-tab="assets">Assets</div>
-                    <div class="cw-tab" data-tab="animations">Animations</div>
-                    <div class="cw-tab" data-tab="emotes">Emotes</div>
-                    <div class="cw-tab" data-tab="outfits">Outfits</div>
-                </div>
+                <div class="cw-title">Currently Wearing</div>
+                <div class="cw-value"><span class="icon-robux-16x16"></span><span id="cw-total-price">...</span></div>
             </div>
+
+            <div class="cw-tabs-container">
+                <div class="cw-slider"></div>
+                <div class="cw-tab active" data-tab="assets">Assets</div>
+                <div class="cw-tab" data-tab="animations">Animations</div>
+                <div class="cw-tab" data-tab="emotes">Emotes</div>
+                <div class="cw-tab" data-tab="outfits">Outfits</div>
+            </div>
+
             <div class="cw-page active" data-page="assets"><div class="cw-grid" id="cw-assets-grid"></div></div>
             <div class="cw-page" data-page="animations"><div class="cw-grid"></div></div>
             <div class="cw-page" data-page="emotes"><div class="cw-grid"></div></div>
@@ -140,43 +141,55 @@ async function injectCurrentlyWearing() {
     </div>
     `;
 
-    // ================= Avatar =================
-    console.log("[CW] Fetching avatar data…");
+    /* ================= Avatar Data ================= */
+
     const avatarData = await fetchRoblox.getUsersAvatar(userID);
-    console.log("[CW] Avatar data:", avatarData);
 
-    const img2D = root.querySelector("#cw-avatar-2d");
-    const headshot = await fetchRoblox.getUserHeadshot(userID);
-    img2D.src = headshot.imageURL || "";
+    /*
+      These are your injection points.
+      Replace these later with real Roblox render URLs.
+    */
+    const BUST_RENDER_URL = (await fetchRoblox.getUserBust(userID)).imageUrl || "";
+    const FULLBODY_RENDER_URL = (await fetchRoblox.getUserFullbody(userID)).imageUrl|| "";
 
-    const toggle2D = root.querySelector("#cw-toggle-2d");
-    const toggle3D = root.querySelector("#cw-toggle-3d");
-    const viewport = root.querySelector("#cw-avatar-viewport");
+    const bustImg = root.querySelector("#cw-bust-img");
+    const fullImg = root.querySelector("#cw-full-img");
+    const bustPH = root.querySelector("#cw-placeholder-bust");
+    const fullPH = root.querySelector("#cw-placeholder-full");
 
-    toggle2D.onclick = () => {
-        viewport.style.display = "none";
-        img2D.style.display = "block";
-        console.log("[CW] 2D mode");
+    bustImg.src = BUST_RENDER_URL;
+    fullImg.src = FULLBODY_RENDER_URL || BUST_RENDER_URL;
+
+    bustImg.onload = () => {
+        bustImg.style.opacity = "1";
+        bustPH.style.display = "none";
     };
 
-    toggle3D.onclick = () => {
-        viewport.style.display = "block";
-        img2D.style.display = "none";
-        console.log("[CW] 3D mode");
+    fullImg.onload = () => {
+        fullImg.style.opacity = "1";
+        fullPH.style.display = "none";
     };
 
-    // Move Roblox canvas if it exists
-    const canvas = document.querySelector(".profile-currently-wearing canvas");
-    if (canvas) {
-        console.log("[CW] Moving Roblox 3D canvas");
-        viewport.appendChild(canvas);
-        canvas.style.width = "100%";
-        canvas.style.height = "100%";
-    }
+    /* ================= View Toggle ================= */
 
-    // ================= Assets =================
-    const assetGrid = root.querySelector("#cw-assets-grid");
+    root.querySelector("#cw-toggle-bust").onclick = () => {
+        bustImg.style.display = "block";
+        fullImg.style.display = "none";
+        bustPH.style.display = bustImg.complete ? "none" : "flex";
+        fullPH.style.display = "none";
+    };
+
+    root.querySelector("#cw-toggle-full").onclick = () => {
+        fullImg.style.display = "block";
+        bustImg.style.display = "none";
+        fullPH.style.display = fullImg.complete ? "none" : "flex";
+        bustPH.style.display = "none";
+    };
+
+    /* ================= Assets ================= */
+
     let total = 0;
+    const assetGrid = root.querySelector("#cw-assets-grid");
 
     avatarData.assets.forEach(a => {
         total += a.price || 0;
@@ -190,44 +203,25 @@ async function injectCurrentlyWearing() {
     });
 
     root.querySelector("#cw-total-price").textContent = total.toLocaleString();
-    console.log("[CW] Total:", total);
 
-    // ================= Animations & Emotes =================
-    ["animations","emotes"].forEach(tab => {
-        const grid = root.querySelector(`.cw-page[data-page="${tab}"] .cw-grid`);
-        (avatarData[tab] || []).forEach(item => {
-            const id = item.id || item.assetId;
-            const name = item.name || item.assetName;
-            const thumb = item.thumbnail || "";
-            const price = item.price ? `<span class="icon-robux-16x16"></span>${item.price}` : "Free";
+    /* ================= Tabs ================= */
 
-            grid.insertAdjacentHTML("beforeend", `
-                <a class="cw-item" href="https://www.roblox.com/catalog/${id}">
-                    <img src="${thumb}">
-                    <div class="cw-item-name">${name}</div>
-                    <div class="cw-item-price">${price}</div>
-                </a>
-            `);
-        });
-    });
+    const tabs = root.querySelectorAll(".cw-tab");
+    const pages = root.querySelectorAll(".cw-page");
+    const slider = root.querySelector(".cw-slider");
 
-    // ================= Outfits =================
-    console.log("[CW] Fetching outfits…");
-    const outfitGrid = root.querySelector("#cw-outfits-grid");
-    const outfits = await fetchRoblox.getUserOutfits(userID);
+    function activateTab(tab) {
+        tabs.forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+        pages.forEach(p => p.classList.toggle("active", p.dataset.page === tab.dataset.tab));
+        slider.style.width = tab.offsetWidth + "px";
+        slider.style.transform = `translateX(${tab.offsetLeft}px)`;
+    }
 
-    outfits.forEach(o => {
-        outfitGrid.insertAdjacentHTML("beforeend", `
-            <div class="cw-item">
-                <img src="${o.thumbnail || ""}">
-                <div class="cw-item-name">${o.name}</div>
-                <div class="cw-item-price">Outfit</div>
-            </div>
-        `);
-    });
-
-    console.log("[CW] Rendered outfits:", outfits.length);
+    tabs.forEach(t => t.onclick = () => activateTab(t));
+    activateTab(root.querySelector(".cw-tab.active"));
 }
+
 
 if (!(Number(userID) === authID)) {
     updateFriendButton();

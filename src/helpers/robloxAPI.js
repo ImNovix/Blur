@@ -170,7 +170,15 @@ export class fetchRoblox {
     }
 
     static async getAssetThumbnail(assetIds, size, format, isCircular) {
-        return await fetchRobloxAPI(`https://thumbnails.roblox.com/v1/assets?assetIds=${assetIds}&returnPolicy=PlaceHolder&size=420x420&format=Png&isCircular=false`)
+        return await fetchRobloxAPI(`https://thumbnails.roblox.com/v1/assets?assetIds=${assetIds}&returnPolicy=PlaceHolder&size=420x420&format=Png&isCircular=false`);
+    }
+
+    static async getUserBust(userID) {
+        return (await fetchRobloxAPI(`https://thumbnails.roblox.com/v1/users/avatar-bust?userIds=${userID}&size=420x420&format=Png&isCircular=false`)).data[0];
+    }
+
+    static async getUserFullbody(userID) {
+        return (await fetchRobloxAPI(`https://thumbnails.roblox.com/v1/users/avatar?userIds=${userID}&size=420x420&format=Png&isCircular=false`)).data[0];
     }
 
     // Avatar

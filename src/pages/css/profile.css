@@ -9,9 +9,6 @@
     gap:20px;
     padding:16px; 
     border-radius:14px; 
-    background:#0f0f0f; 
-    border:1px solid #1f1f1f; 
-    color:#fff;
 }
 
 .cw-left { 
@@ -22,9 +19,7 @@
 .cw-avatar { 
     width:100%; 
     border-radius:12px; 
-    background:#080808; 
     overflow:hidden; 
-    border:1px solid #1a1a1a; 
     min-height:280px; 
     position:relative; 
 }
@@ -32,7 +27,7 @@
 .cw-avatar img { 
     width:100%; 
     display:block; 
-    transition: opacity 0.3s; 
+    transition:opacity .3s;
 }
 
 #cw-avatar-viewport { 
@@ -41,12 +36,14 @@
     display:none; 
 }
 
-#cw-toggle-2d, #cw-toggle-3d { 
+#cw-toggle-2d,
+#cw-toggle-3d { 
     position:absolute; 
     bottom:8px; 
     left:8px; 
     padding:4px 8px; 
     font-size:10px; 
+    border-radius:6px;
 }
 
 .cw-right { 
@@ -61,12 +58,6 @@
     justify-content:space-between; 
     align-items:center; 
     margin-bottom:20px; 
-}
-
-.cw-title-group { 
-    display:flex; 
-    align-items:center; 
-    gap:6px; 
 }
 
 .cw-title { 
@@ -85,34 +76,26 @@
 .cw-tabs-container { 
     position:relative; 
     display:flex; 
-    background:#161616; 
     padding:3px; 
     border-radius:9px; 
-    border:1px solid #222; 
 }
 
 .cw-tab { 
     z-index:2; 
     padding:6px 16px; 
     font-size:12px; 
-    color:#888; 
     cursor:pointer; 
     min-width:85px; 
     text-align:center; 
-}
-
-.cw-tab.active { 
-    color:#fff; 
 }
 
 .cw-slider { 
     position:absolute;
     top:3px; 
     left:3px; 
-    height:calc(100%-6px); 
-    background:rgba(255,255,255,0.1); 
+    height:calc(100% - 6px); 
     border-radius:7px; 
-    transition:all 0.25s ease; 
+    transition:.25s ease; 
     z-index:1; 
 }
 
@@ -122,9 +105,7 @@
     overflow-y:auto; 
 }
 
-.cw-page.active { 
-    display:block; 
-}
+.cw-page.active { display:block; }
 
 .cw-grid { 
     display:grid; 
@@ -133,11 +114,8 @@
 }
 
 .cw-item { 
-    background:#161616; 
-    border:1px solid #222; 
     border-radius:10px; 
     padding:8px; 
-    color:#fff; 
     text-decoration:none; 
 }
 
@@ -155,7 +133,96 @@
     text-overflow:ellipsis; 
 }
 
-.cw-item-price { 
-    font-size:10px; 
-    opacity:0.75; 
+.cw-item-price { font-size:10px; }
+
+/* =========================================================
+   DARK THEME (your original)
+   ========================================================= */
+
+.dark-theme .cw-card {
+    background:#0f0f0f;
+    border:1px solid #1f1f1f;
+    color:#fff;
+}
+
+.dark-theme .cw-avatar {
+    background:#080808;
+    border:1px solid #1a1a1a;
+}
+
+.dark-theme #cw-toggle-2d,
+.dark-theme #cw-toggle-3d {
+    background:#181818;
+    color:#fff;
+    border:1px solid #333;
+}
+
+.dark-theme .cw-tabs-container {
+    background:#161616;
+    border:1px solid #222;
+}
+
+.dark-theme .cw-tab { color:#888; }
+.dark-theme .cw-tab.active { color:#fff; }
+
+.dark-theme .cw-slider { background:rgba(255,255,255,.1); }
+
+.dark-theme .cw-item {
+    background:#161616;
+    border:1px solid #222;
+    color:#fff;
+}
+
+.dark-theme .cw-item-price { opacity:.75; }
+
+
+
+/* =========================================================
+   LIGHT THEME
+   ========================================================= */
+
+.light-theme .cw-card {
+    background:#ffffff;
+    border:1px solid #e3e3e3;
+    color:#111;
+    box-shadow:0 2px 10px rgba(0,0,0,.05);
+}
+
+.light-theme .cw-avatar {
+    background:#f2f2f2;
+    border:1px solid #ddd;
+}
+
+.light-theme #cw-toggle-2d,
+.light-theme #cw-toggle-3d {
+    background:#ffffff;
+    color:#111;
+    border:1px solid #ccc;
+}
+
+.light-theme .cw-tabs-container {
+    background:#f1f1f1;
+    border:1px solid #d6d6d6;
+}
+
+.light-theme .cw-tab { color:#666; }
+.light-theme .cw-tab.active { color:#111; font-weight:600; }
+
+.light-theme .cw-slider {
+    background:#ffffff;
+    box-shadow:0 1px 4px rgba(0,0,0,.08);
+}
+
+.light-theme .cw-item {
+    background:#ffffff;
+    border:1px solid #e2e2e2;
+    color:#111;
+    box-shadow:0 1px 3px rgba(0,0,0,.05);
+}
+
+.light-theme .cw-item img { background:#f4f4f4; }
+
+.light-theme .cw-item-price {
+    color:#666;
+    opacity:1;
 }
