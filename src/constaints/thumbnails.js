@@ -1,4 +1,5 @@
 export const Thumbnaildefults = {
+    placeHolder: "",
     userHeadshot: {
         size: [
             '48x48',

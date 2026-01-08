@@ -61,27 +61,50 @@ async function updateSocialRow() {
 }
 
 async function injectCurrentlyWearing() {
-    console.log("[CW] injectCurrentlyWearing() called");
 
-    if (document.getElementById("cw-root")) {
-        console.log("[CW] cw-root already exists. Skipping.");
-        return;
+    /* ================= Rate-limit safe asset fetch ================= */
+
+    async function getAssetDetailsWithRetry(assetIds) {
+        while (true) {
+            try {
+                return await fetchRoblox.getAssetDetails(assetIds);
+            } catch (err) {
+                if (String(err).includes("429")) {
+                    console.warn("[CW] Asset details rate-limited. Retrying in 5s...");
+                    await new Promise(r => setTimeout(r, 5000));
+                    continue;
+                }
+                throw err;
+            }
+        }
     }
 
-    const robloxSlot = await new Promise(resolve => {
-        const existing = document.querySelector(".profile-currently-wearing");
-        if (existing) return resolve(existing);
+    /* ================= Wait for Roblox slot ================= */
 
-        const obs = new MutationObserver(() => {
-            const el = document.querySelector(".profile-currently-wearing");
-            if (el) {
-                obs.disconnect();
-                resolve(el);
-            }
+    function waitForCWSlot() {
+        return new Promise(resolve => {
+            const existing = document.querySelector(".profile-currently-wearing");
+            if (existing) return resolve(existing);
+
+            const obs = new MutationObserver(() => {
+                const el = document.querySelector(".profile-currently-wearing");
+                if (el) {
+                    obs.disconnect();
+                    resolve(el);
+                }
+            });
+
+            obs.observe(document.body, { childList: true, subtree: true });
         });
+    }
 
-        obs.observe(document.body, { childList: true, subtree: true });
-    });
+    /* ================= Prevent duplicates ================= */
+
+    if (document.getElementById("cw-root")) return;
+
+    const robloxSlot = await waitForCWSlot();
+
+    /* ================= Phase 1 – Instant UI ================= */
 
     robloxSlot.removeAttribute("ng-if");
     robloxSlot.removeAttribute("ng-show");
@@ -92,45 +115,34 @@ async function injectCurrentlyWearing() {
     root.id = "cw-root";
     robloxSlot.appendChild(root);
 
-    /* ================= UI ================= */
-
     root.innerHTML = `
-    <style>
-        .cw-avatar { position:relative; width:100%; border-radius:12px; background:#080808; border:1px solid #1a1a1a; min-height:280px; display:flex; align-items:center; justify-content:center; }
-        .cw-avatar img { width:100%; border-radius:12px; display:block; transition:opacity .3s; }
-        .cw-avatar button { position:absolute; bottom:8px; padding:4px 10px; font-size:12px; background:#1a1a1a; color:#fff; border:none; border-radius:6px; cursor:pointer; }
-        #cw-toggle-bust { left:8px; }
-        #cw-toggle-full { right:8px; }
-
-        .cw-placeholder { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:13px; color:#888; }
-    </style>
-
     <div class="cw-card">
         <div class="cw-left">
             <div class="cw-avatar">
-                <div id="cw-placeholder-bust" class="cw-placeholder">Loading Bust…</div>
+                <div id="cw-placeholder-bust" class="cw-placeholder"></div>
                 <img id="cw-bust-img" style="opacity:0">
 
-                <div id="cw-placeholder-full" class="cw-placeholder" style="display:none">Loading Fullbody…</div>
+                <div id="cw-placeholder-full" class="cw-placeholder" style="display:none"></div>
                 <img id="cw-full-img" style="opacity:0; display:none">
-
-                <button id="cw-toggle-bust">Bust</button>
-                <button id="cw-toggle-full">Fullbody</button>
             </div>
+            <button id="cw-toggle">Bust</button>
         </div>
 
         <div class="cw-right">
-            <div class="cw-header-row">
-                <div class="cw-title">Currently Wearing</div>
-                <div class="cw-value"><span class="icon-robux-16x16"></span><span id="cw-total-price">...</span></div>
-            </div>
+            <div class="cw-top-bar">
+                <div class="cw-header-left">
+                    <div class="cw-title">Currently Wearing</div>
+                    <span class="icon-robux-16x16"></span>
+                    <span id="cw-total-price">...</span>
+                </div>
 
-            <div class="cw-tabs-container">
-                <div class="cw-slider"></div>
-                <div class="cw-tab active" data-tab="assets">Assets</div>
-                <div class="cw-tab" data-tab="animations">Animations</div>
-                <div class="cw-tab" data-tab="emotes">Emotes</div>
-                <div class="cw-tab" data-tab="outfits">Outfits</div>
+                <div class="cw-tabs-container">
+                    <div class="cw-slider"></div>
+                    <div class="cw-tab active" data-tab="assets">Assets</div>
+                    <div class="cw-tab" data-tab="animations">Animations</div>
+                    <div class="cw-tab" data-tab="emotes">Emotes</div>
+                    <div class="cw-tab" data-tab="outfits">Outfits</div>
+                </div>
             </div>
 
             <div class="cw-page active" data-page="assets"><div class="cw-grid" id="cw-assets-grid"></div></div>
@@ -140,69 +152,6 @@ async function injectCurrentlyWearing() {
         </div>
     </div>
     `;
-
-    /* ================= Avatar Data ================= */
-
-    const avatarData = await fetchRoblox.getUsersAvatar(userID);
-
-    /*
-      These are your injection points.
-      Replace these later with real Roblox render URLs.
-    */
-    const BUST_RENDER_URL = (await fetchRoblox.getUserBust(userID)).imageUrl || "";
-    const FULLBODY_RENDER_URL = (await fetchRoblox.getUserFullbody(userID)).imageUrl|| "";
-
-    const bustImg = root.querySelector("#cw-bust-img");
-    const fullImg = root.querySelector("#cw-full-img");
-    const bustPH = root.querySelector("#cw-placeholder-bust");
-    const fullPH = root.querySelector("#cw-placeholder-full");
-
-    bustImg.src = BUST_RENDER_URL;
-    fullImg.src = FULLBODY_RENDER_URL || BUST_RENDER_URL;
-
-    bustImg.onload = () => {
-        bustImg.style.opacity = "1";
-        bustPH.style.display = "none";
-    };
-
-    fullImg.onload = () => {
-        fullImg.style.opacity = "1";
-        fullPH.style.display = "none";
-    };
-
-    /* ================= View Toggle ================= */
-
-    root.querySelector("#cw-toggle-bust").onclick = () => {
-        bustImg.style.display = "block";
-        fullImg.style.display = "none";
-        bustPH.style.display = bustImg.complete ? "none" : "flex";
-        fullPH.style.display = "none";
-    };
-
-    root.querySelector("#cw-toggle-full").onclick = () => {
-        fullImg.style.display = "block";
-        bustImg.style.display = "none";
-        fullPH.style.display = fullImg.complete ? "none" : "flex";
-        bustPH.style.display = "none";
-    };
-
-    /* ================= Assets ================= */
-
-    let total = 0;
-    const assetGrid = root.querySelector("#cw-assets-grid");
-
-    avatarData.assets.forEach(a => {
-        total += a.price || 0;
-        assetGrid.insertAdjacentHTML("beforeend", `
-            <a class="cw-item" href="https://www.roblox.com/catalog/${a.id}">
-                <img src="${a.thumbnail || ""}">
-                <div class="cw-item-name">${a.name}</div>
-                <div class="cw-item-price">${a.price ? `<span class="icon-robux-16x16"></span>${a.price}` : "Free"}</div>
-            </a>
-        `);
-    });
-
-    root.querySelector("#cw-total-price").textContent = total.toLocaleString();
 
     /* ================= Tabs ================= */
 
@@ -220,6 +169,69 @@ async function injectCurrentlyWearing() {
 
     tabs.forEach(t => t.onclick = () => activateTab(t));
     activateTab(root.querySelector(".cw-tab.active"));
+
+    /* ================= View Toggle ================= */
+
+    const bustImg = root.querySelector("#cw-bust-img");
+    const fullImg = root.querySelector("#cw-full-img");
+    const bustPH = root.querySelector("#cw-placeholder-bust");
+    const fullPH = root.querySelector("#cw-placeholder-full");
+    const toggleBtn = root.querySelector("#cw-toggle");
+
+    let isBust = true;
+
+    toggleBtn.onclick = () => {
+        isBust = !isBust;
+        toggleBtn.textContent = isBust ? "Bust" : "Full";
+
+        bustImg.style.display = isBust ? "block" : "none";
+        fullImg.style.display = isBust ? "none" : "block";
+    };
+
+    /* ================= Phase 2 – Lazy Data ================= */
+
+    (async () => {
+        const avatarData = await fetchRoblox.getUsersAvatar(userID);
+        const assetIds = avatarData.assets.map(a => a.id).join(",");
+
+        const [assetDetails, assetThumbs, bust, full] = await Promise.all([
+            getAssetDetailsWithRetry(assetIds),
+            fetchRoblox.getAssetThumbnail(assetIds),
+            fetchRoblox.getUserBust(userID),
+            fetchRoblox.getUserFullbody(userID)
+        ]);
+
+        const priceMap = {};
+        const thumbMap = {};
+
+        assetDetails.data.forEach(a => priceMap[a.id] = a.price ?? 0);
+        assetThumbs.data.forEach(t => thumbMap[t.targetId] = t.imageUrl || "");
+
+        bustImg.src = bust.imageUrl || "";
+        fullImg.src = full.imageUrl || bust.imageUrl || "";
+
+        bustImg.onload = () => { bustImg.style.opacity = 1; bustPH.style.display = "none"; };
+        fullImg.onload = () => { fullImg.style.opacity = 1; fullPH.style.display = "none"; };
+
+        let total = 0;
+        const grid = root.querySelector("#cw-assets-grid");
+
+        avatarData.assets.forEach(a => {
+            const price = priceMap[a.id] || 0;
+            const thumb = thumbMap[a.id] || "";
+            total += price;
+
+            grid.insertAdjacentHTML("beforeend", `
+                <a class="cw-item" href="https://www.roblox.com/catalog/${a.id}" target="_blank">
+                    <img src="${thumb}">
+                    <div class="cw-item-name">${a.name}</div>
+                    <div class="cw-item-price">${price ? `<span class="icon-robux-16x16"></span>${price}` : "Free"}</div>
+                </a>
+            `);
+        });
+
+        root.querySelector("#cw-total-price").textContent = total.toLocaleString();
+    })();
 }
 
 

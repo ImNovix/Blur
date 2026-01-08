@@ -1,32 +1,30 @@
 export class fetchRoblox {
-    // Account Details
+    // --- Account Details ---
     static async getAuth() {
-        return await fetchRobloxAPI("https://users.roblox.com/v1/users/authenticated");
+        return await fetchRobloxAPI("users", "/v1/users/authenticated");
     }
 
     static async getUserBirthday() {
-        return await fetchRobloxAPI(`https://users.roblox.com/v1/birthdate`);
+        return await fetchRobloxAPI("users", "v1/birthdate");
     }
 
-    // Friends
+    // --- Friends ---
     static async getFriendCount(userID = "0") {
-        if (userID === "0") {
-            return await fetchRobloxAPI(`https://friends.roblox.com/v1/my/friends/count`);
-        } else {
-            return await fetchRobloxAPI(`https://friends.roblox.com/v1/users/${userID}/friends/count`);
-        }
+        return userID === "0"
+            ? await fetchRobloxAPI("friends", "v1/my/friends/count")
+            : await fetchRobloxAPI("friends", `v1/users/${userID}/friends/count`);
     }
 
     static async getFriends(userID = "0") {
         if (userID === "0") {
             userID = (await fetchRoblox.getAuth()).id;
         }
-        return await fetchRobloxAPI(`https://friends.roblox.com/v1/users/${userID}/friends`);
+        return await fetchRobloxAPI("friends", `v1/users/${userID}/friends`);
     }
 
     static async getSuggestedFriends() {
         const authID = (await fetchRoblox.getAuth()).id;
-        return await fetchRobloxAPI(`https://friends.roblox.com/v1/users/${authID}/friends/recommendations?source=AddFriendsPage`);
+        return await fetchRobloxAPI("friends", `v1/users/${authID}/friends/recommendations?source=AddFriendsPage`);
     }
 
     static async getMutualFriends(userID) {
@@ -56,12 +54,11 @@ export class fetchRoblox {
 
     static async getFriendship(userID) {
         const authID = (await fetchRoblox.getAuth()).id;
-        const res = await fetchRobloxAPI(`https://friends.roblox.com/v1/users/${authID}/friends/statuses?userIds=${userID}`);
+        const res = await fetchRobloxAPI("friends", `v1/users/${authID}/friends/statuses?userIds=${userID}`);
         return res.data[0];
     }
 
     static async getFriendshipDuration(userID) {
-        const url = "https://apis.roblox.com/profile-insights-api/v1/multiProfileInsights";
 
         const body = {
             rankingStrategy: "tc_info_boost",
@@ -69,7 +66,7 @@ export class fetchRoblox {
         };
 
         try {
-            const res = await fetchRobloxAPI(url, {
+            const res = await fetchRobloxAPI("apis", "/profile-insights-api/v1/multiProfileInsights", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body)
@@ -114,15 +111,15 @@ export class fetchRoblox {
     }
 
     static async acceptFriendRequest(userID) {
-        return await fetchRobloxAPI(`https://friends.roblox.com/v1/users/${userID}/accept-friend-request`, { method: "POST", });
+        return await fetchRobloxAPI("friends", `v1/users/${userID}/accept-friend-request`, { method: "POST", });
     }
 
     static async declineFriendRequest(userID) {
-        return await fetchRobloxAPI(`https://friends.roblox.com/v1/users/${userID}/decline-friend-request`, { method: "POST", });
+        return await fetchRobloxAPI("friends", `v1/users/${userID}/decline-friend-request`, { method: "POST", });
     }
 
     static async getFriendRequests() {
-        return await fetchRobloxAPI(`https://friends.roblox.com/v1/my/friends/requests`);
+        return await fetchRobloxAPI("friends", "v1/my/friends/requests");
     }
 
     // Users
@@ -130,14 +127,12 @@ export class fetchRoblox {
         if (userID === "0") {
             userID = (await fetchRoblox.getAuth()).id;
         }
-        return await fetchRobloxAPI(`https://users.roblox.com/v1/users/${userID}`);
+        return await fetchRobloxAPI("users", `v1/users/${userID}`);
     }
 
     static async getUserPresence(userID = "0") {
-        if (userID === "0") {
-            userID = (await fetchRoblox.getAuth()).id;
-        }
-        return (await fetchRobloxAPI(`https://presence.roblox.com/v1/presence/users`,
+        if (userID === "0") { userID = (await fetchRoblox.getAuth()).id; }
+        return (await fetchRobloxAPI("presence", `v1/presence/users`,
             {
                 method: "POST",
                 body: JSON.stringify({  "userIds": [userID] }),
@@ -149,42 +144,49 @@ export class fetchRoblox {
         if (userID === "0") {
             userID = (await fetchRoblox.getAuth()).id;
         }
-        return await fetchRobloxAPI(`https://premiumfeatures.roblox.com/v1/users/${userID}/validate-membership`);
+        return await fetchRobloxAPI("premiumfeatures", `v1/users/${userID}/validate-membership`);
     }
 
-    // Thumbnails
+    // --- Thumbnails ---
+    static async getThumbnailsBatch(jsonReq) {
+        return await fetchRobloxAPI("thumbnails", "/v1/batch", {
+            method: "POST",
+            body: JSON.stringify(jsonReq)
+        })
+    }
+
     static async getUserHeadshot(userID = "0", size="150x150", format="Png", isCircular="false") {
         if (userID === "0") {
             userID = (await fetchRoblox.getAuth()).id;
         }
-        const res = await fetchRobloxAPI(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userID}&size=${size}&format=${format}&isCircular=${isCircular}`);
+        const res = await fetchRobloxAPI("thumbnails", `v1/users/avatar-headshot?userIds=${userID}&size=${size}&format=${format}&isCircular=${isCircular}`);
         return res.data[0];
     }
 
     static async getUniverseIcon(universeID, size="150x150", format="Png", isCircular="false") {
-        return (await fetchRobloxAPI(`https://thumbnails.roblox.com/v1/games/icons?universeIds=${universeID}&size=${size}&format=${format}&isCircular=${isCircular}`)).data[0];
+        return (await fetchRobloxAPI("thumbnails", `v1/games/icons?universeIds=${universeID}&size=${size}&format=${format}&isCircular=${isCircular}`)).data[0];
     }
 
     static async getOutfitThumbnail(outfitIds, size, format, isCircular) {
-        return await fetchRobloxAPI(`https://thumbnails.roblox.com/v1/users/outfits?userOutfitIds=${outfitIds}&size=420x420&format=Png&isCircular=false`);
+        return await fetchRobloxAPI("thumbnails", `v1/users/outfits?userOutfitIds=${outfitIds}&size=420x420&format=Png&isCircular=false`);
     }
 
     static async getAssetThumbnail(assetIds, size, format, isCircular) {
-        return await fetchRobloxAPI(`https://thumbnails.roblox.com/v1/assets?assetIds=${assetIds}&returnPolicy=PlaceHolder&size=420x420&format=Png&isCircular=false`);
+        return await fetchRobloxAPI("thumbnails", `v1/assets?assetIds=${assetIds}&returnPolicy=PlaceHolder&size=420x420&format=Png&isCircular=false`);
     }
 
     static async getUserBust(userID) {
-        return (await fetchRobloxAPI(`https://thumbnails.roblox.com/v1/users/avatar-bust?userIds=${userID}&size=420x420&format=Png&isCircular=false`)).data[0];
+        return (await fetchRobloxAPI("thumbnails", `v1/users/avatar-bust?userIds=${userID}&size=420x420&format=Png&isCircular=false`)).data[0];
     }
 
     static async getUserFullbody(userID) {
-        return (await fetchRobloxAPI(`https://thumbnails.roblox.com/v1/users/avatar?userIds=${userID}&size=420x420&format=Png&isCircular=false`)).data[0];
+        return (await fetchRobloxAPI("thumbnails", `v1/users/avatar?userIds=${userID}&size=420x420&format=Png&isCircular=false`)).data[0];
     }
 
     // Avatar
     static async getUsersAvatar(userID) {
         // Fetch raw avatar data
-        const res = await fetchRobloxAPI(`https://avatar.roblox.com/v2/avatar/users/${userID}/avatar`);
+        const res = await fetchRobloxAPI("avatar",`v2/avatar/users/${userID}/avatar`);
         const allAssets = res.assets || [];
         const emotes = res.emotes || [];
 
@@ -200,7 +202,7 @@ export class fetchRoblox {
         const animations = [];
         const assets = [];
 
-        // Separate assets and animations (MoodAnimation stays in assets)
+        // Separate assets and animations
         allAssets.forEach(a => {
             if (animationTypes.has(a.assetType?.name)) {
                 animations.push(a);
@@ -209,66 +211,23 @@ export class fetchRoblox {
             }
         });
 
-        // Combine all IDs to fetch thumbnails & prices
-        const allIds = [
-            ...assets.map(a => a.id),
-            ...animations.map(a => a.id),
-            ...emotes.map(e => e.assetId)
-        ];
-
-        // Fetch thumbnails
-        const thumbsRes = allIds.length 
-            ? await fetchRoblox.getAssetThumbnail(allIds.join(",")) 
-            : { data: [] };
-
-        const thumbMap = new Map();
-        (thumbsRes.data || []).forEach(t => {
-            thumbMap.set(t.targetId, t.imageUrl); // <-- use targetId, not assetId
-        });
-
-        // Fetch prices
-        const detailsRes = allIds.length ? await fetchRoblox.getAssetDetails(allIds.join(",")) : { data: [] };
-        const priceMap = new Map();
-        (detailsRes.data || []).forEach(d => priceMap.set(d.id, d.price || 0));
-
-        // Enrich assets
-        const enrichedAssets = assets.map(a => ({
-            ...a,
-            thumbnail: thumbMap.get(a.id) || null,
-            price: priceMap.get(a.id) || 0
-        }));
-
-        const enrichedAnimations = animations.map(a => ({
-            ...a,
-            thumbnail: thumbMap.get(a.id) || null,
-            price: priceMap.get(a.id) || 0
-        }));
-
-        const enrichedEmotes = emotes.map(e => ({
-            ...e,
-            thumbnail: thumbMap.get(e.assetId) || null,
-            price: priceMap.get(e.assetId) || 0
-        }));
-
         return {
             playerAvatarType: res.playerAvatarType,
             scales: res.scales,
             bodyColor3s: res.bodyColor3s,
-            assets: enrichedAssets,
-            animations: enrichedAnimations,
-            emotes: enrichedEmotes
+            assets: assets,
+            animations: animations,
+            emotes: emotes
         };
     }
 
     static async getOutfitDetails(outfitID) {
-        return await fetchRobloxAPI(`https://avatar.roblox.com/v3/outfits/${outfitID}/details`);
+        return await fetchRobloxAPI("avatar", `v3/outfits/${outfitID}/details`);
     }
 
     static async getUserOutfits(userID) {
         // Fetch outfit list
-        const outfitRes = await fetchRobloxAPI(
-            `https://avatar.roblox.com/v2/avatar/users/${userID}/outfits?page=1&itemsPerPage=25&isEditable=true`
-        );
+        const outfitRes = await fetchRobloxAPI("avatar", `v2/avatar/users/${userID}/outfits?itemsPerPage=25&isEditable=true`);
 
         const outfits = outfitRes.data;
 
@@ -329,7 +288,7 @@ export class fetchRoblox {
 
         // Call the API
         const res = await fetchRobloxAPI(
-            "https://catalog.roblox.com/v1/catalog/items/details",
+            "catalog", "v1/catalog/items/details",
             {
                 method: "POST",
                 headers: {
@@ -341,19 +300,29 @@ export class fetchRoblox {
 
         return res;
     }
+
+    // --- Chat System ---
+    static async ableToChatWithUser(userID, converastationID) {
+
+    }
 }
 
-async function fetchRobloxAPI(url, options = {}) {
-    const method = (options.method || 'GET').toUpperCase();
-    const isPost = method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE';
+async function fetchRobloxAPI(service, path, options = {}) {
+    // Build URL directly: https://service.roblox.com/...
+    const url = path.startsWith("http")
+        ? path
+        : `https://${service}.roblox.com/${path.replace(/^\/+/, "")}`;
+
+    const method = (options.method || "GET").toUpperCase();
+    const isWrite = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
 
     let headers = { ...(options.headers || {}) };
     let attempt = 0;
 
-    // If it's a POST/PUT/PATCH/DELETE, pre-include the CSRF token
-    if (isPost && !headers['X-CSRF-TOKEN']) {
-        headers['X-CSRF-TOKEN'] = ''; // Roblox will return a new token if empty/invalid
-        headers['Content-Type'] = 'application/json';
+    // Pre-seed CSRF for write requests
+    if (isWrite && !headers["X-CSRF-TOKEN"]) {
+        headers["X-CSRF-TOKEN"] = "";
+        headers["Content-Type"] = "application/json";
     }
 
     while (attempt < 2) {
@@ -361,31 +330,28 @@ async function fetchRobloxAPI(url, options = {}) {
             ...options,
             method,
             headers,
-            // FIX: Allow options to override credentials. 
-            // Defaults to 'include' for Roblox APIs, but allows 'omit' for CDNs.
-            credentials: options.credentials || 'include'
+            credentials: options.credentials ?? "include"
         });
 
-        // Handle CSRF Token refresh logic
-        if (response.status === 403 && isPost) {
-            const csrfToken = response.headers.get('x-csrf-token');
-            if (csrfToken && attempt === 0) {
-                headers['X-CSRF-TOKEN'] = csrfToken; // Retry with valid token
+        // CSRF refresh
+        if (response.status === 403 && isWrite) {
+            const token = response.headers.get("x-csrf-token");
+            if (token && attempt === 0) {
+                headers["X-CSRF-TOKEN"] = token;
                 attempt++;
                 continue;
             }
         }
 
         if (!response.ok) {
-            throw new Error(`API call to ${url} failed with status: ${response.status}`);
+            const body = await response.text();
+            throw new Error(`[Roblox API] ${method} ${url} → ${response.status}\n${body}`);
         }
 
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.includes("application/json")) {
-            return response.json();
-        } else {
-            return response.text();
-        }
+        const contentType = response.headers.get("content-type") || "";
+        return contentType.includes("application/json")
+            ? response.json()
+            : response.text();
     }
 
     throw new Error("Failed to fetch with valid CSRF token");
