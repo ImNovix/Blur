@@ -59,18 +59,15 @@ export class fetchRoblox {
     }
 
     static async getFriendshipDuration(userID) {
-
-        const body = {
-            rankingStrategy: "tc_info_boost",
-            userIds: [userID]
-        };
-
         try {
             const res = await fetchRobloxAPI("apis", "/profile-insights-api/v1/multiProfileInsights", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(body)
-            });
+                body: JSON.stringify( {
+                        rankingStrategy: "tc_info_boost",
+                        userIds: [userID]
+                    })
+                });
 
             const insights = res.userInsights?.[0]?.profileInsights || [];
 
@@ -122,7 +119,7 @@ export class fetchRoblox {
         return await fetchRobloxAPI("friends", "v1/my/friends/requests");
     }
 
-    // Users
+    // --- Users ---
     static async getUserDetails(userID = "0") {
         if (userID === "0") {
             userID = (await fetchRoblox.getAuth()).id;
@@ -145,6 +142,10 @@ export class fetchRoblox {
             userID = (await fetchRoblox.getAuth()).id;
         }
         return await fetchRobloxAPI("premiumfeatures", `v1/users/${userID}/validate-membership`);
+    }
+
+    static async getUserDetailsOpenCloud(userID) {
+        return await fetchOpenCloudAPI(`cloud/v2/users/${userID}`)
     }
 
     // --- Thumbnails ---
@@ -183,7 +184,7 @@ export class fetchRoblox {
         return (await fetchRobloxAPI("thumbnails", `v1/users/avatar?userIds=${userID}&size=420x420&format=Png&isCircular=false`)).data[0];
     }
 
-    // Avatar
+    // --- Avatar ---
     static async getUsersAvatar(userID) {
         // Fetch raw avatar data
         const res = await fetchRobloxAPI("avatar",`v2/avatar/users/${userID}/avatar`);
@@ -274,27 +275,21 @@ export class fetchRoblox {
     // Assets
     static async getAssetDetails(assetIds) {
         if (!Array.isArray(assetIds)) {
-            // If you passed a comma-separated string, split it
             assetIds = assetIds.split(",").map(id => id.trim());
         }
-
-        // Build the POST body in the format Roblox expects
-        const body = {
-            items: assetIds.map(id => ({
-                itemType: "Asset",
-                id: Number(id)
-            }))
-        };
 
         // Call the API
         const res = await fetchRobloxAPI(
             "catalog", "v1/catalog/items/details",
             {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(body)
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify( {
+                    items: assetIds.map(id => ({
+                        itemType: "Asset",
+                        id: Number(id)
+                    }))
+                })
             }
         );
 

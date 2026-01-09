@@ -31,6 +31,10 @@ const pageFeatures = [
     url: "roblox.com/users/*/profile",
     scripts: ["src/pages/profile.js"],
     styles: ["src/pages/css/profile.css"]
+  },
+  {
+    url: "https://www.roblox.com/my/account*",
+    scripts: ["src/pages/settings.js"]
   }
 ];
 

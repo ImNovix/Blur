@@ -1,6 +1,7 @@
 import { fetchRoblox } from "../helpers/robloxAPI.js";
 import { waitForSelector } from "../helpers/elements.js";
 import { Storage } from "../helpers/storage.js";
+import { formatProfileUserLanguage } from "../helpers/locale.js"
 
 const storage = new Storage();
 await storage.initDefaults();
@@ -24,6 +25,8 @@ async function updateFriendButton() {
 
 // previous username count, friends since, join date, and locale
 async function addBetterStats() {
+    await waitForSelector("");
+    const stats = document.querySelector("");
 
 }
 
