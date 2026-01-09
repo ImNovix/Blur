@@ -1,13 +1,8 @@
-// ==UserScript==
-// @name         Roblox Settings Extension Framework
-// @match        https://www.roblox.com/my/account*
-// @run-at       document-idle
-// ==/UserScript==
-
 (function () {
   "use strict";
 
-  const EXT = "#!/my-extension";
+  const EXT_PARAM = "extension";
+  const EXT_VALUE = "my-extension";
 
   /* -----------------------------
      Utils
@@ -26,6 +21,17 @@
       });
       o.observe(document, { childList: true, subtree: true });
     });
+  }
+
+  function getQuery() {
+    return new URLSearchParams(location.search);
+  }
+
+  function setQuery(param, value) {
+    const q = getQuery();
+    if (value === null) q.delete(param);
+    else q.set(param, value);
+    history.replaceState({}, "", location.pathname + "?" + q.toString() + location.hash);
   }
 
   /* -----------------------------
@@ -68,6 +74,8 @@
   ----------------------------- */
 
   function render(tab = "general") {
+    showExtension();
+
     extRoot.innerHTML = `
       <style>
         .ext-wrap {
@@ -138,7 +146,7 @@
 
     extRoot.querySelectorAll(".ext-tab").forEach(t => {
       t.onclick = () => {
-        history.replaceState({}, "", EXT + "/" + t.dataset.tab);
+        setQuery(EXT_PARAM, EXT_VALUE + "/" + t.dataset.tab);
         draw(t.dataset.tab);
       };
     });
@@ -162,7 +170,18 @@
     clone.querySelector(".rbx-tab-subtitle").textContent = "";
 
     const a = clone.querySelector("a");
-    a.href = EXT;
+    a.href = "?extension=" + EXT_VALUE;
+
+    a.onclick = e => {
+      e.preventDefault();
+      setQuery(EXT_PARAM, EXT_VALUE + "/general");
+      render("general");
+
+      list.querySelectorAll(".menu-option-content")
+        .forEach(a => a.classList.remove("active"));
+
+      clone.querySelector(".menu-option-content").classList.add("active");
+    };
 
     list.appendChild(clone);
   }
@@ -172,15 +191,16 @@
   ----------------------------- */
 
   function route() {
-    if (location.hash.startsWith(EXT)) {
-      showExtension();
-      const tab = location.hash.split("/")[2];
+    const q = getQuery();
+    const extTab = q.get(EXT_PARAM);
+
+    if (extTab && extTab.startsWith(EXT_VALUE)) {
+      const tab = extTab.split("/")[1];
       render(tab || "general");
 
       document.querySelectorAll(".menu-option-content")
         .forEach(a => a.classList.remove("active"));
-
-      document.querySelector("#my-extension a")?.classList.add("active");
+      document.querySelector("#my-extension .menu-option-content")?.classList.add("active");
     } else {
       hideExtension();
     }
@@ -192,6 +212,5 @@
 
   injectSidebar();
   route();
-  window.addEventListener("hashchange", route);
-
+  window.addEventListener("popstate", route);
 })();
