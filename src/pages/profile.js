@@ -18,10 +18,11 @@ function getProfileUserIdFromUrl() {
 }
 
 async function updateFriendButton() {
+    const button = document.querySelector("")
 
 }
 
-// previous username count, friends since, and join date
+// previous username count, friends since, join date, and locale
 async function addBetterStats() {
 
 }
@@ -188,49 +189,78 @@ async function injectCurrentlyWearing() {
         fullImg.style.display = isBust ? "none" : "block";
     };
 
-    /* ================= Phase 2 – Lazy Data ================= */
+    /* ================= Phase 2 – Progressive Data Loading ================= */
 
     (async () => {
-        const avatarData = await fetchRoblox.getUsersAvatar(userID);
-        const assetIds = avatarData.assets.map(a => a.id).join(",");
-
-        const [assetDetails, assetThumbs, bust, full] = await Promise.all([
-            getAssetDetailsWithRetry(assetIds),
-            fetchRoblox.getAssetThumbnail(assetIds),
-            fetchRoblox.getUserBust(userID),
-            fetchRoblox.getUserFullbody(userID)
-        ]);
-
-        const priceMap = {};
-        const thumbMap = {};
-
-        assetDetails.data.forEach(a => priceMap[a.id] = a.price ?? 0);
-        assetThumbs.data.forEach(t => thumbMap[t.targetId] = t.imageUrl || "");
-
-        bustImg.src = bust.imageUrl || "";
-        fullImg.src = full.imageUrl || bust.imageUrl || "";
-
-        bustImg.onload = () => { bustImg.style.opacity = 1; bustPH.style.display = "none"; };
-        fullImg.onload = () => { fullImg.style.opacity = 1; fullPH.style.display = "none"; };
-
-        let total = 0;
         const grid = root.querySelector("#cw-assets-grid");
-
+        const avatarData = await fetchRoblox.getUsersAvatar(userID);
+        
+        // Step 1: Render cards immediately with just names
         avatarData.assets.forEach(a => {
-            const price = priceMap[a.id] || 0;
-            const thumb = thumbMap[a.id] || "";
-            total += price;
-
-            grid.insertAdjacentHTML("beforeend", `
-                <a class="cw-item" href="https://www.roblox.com/catalog/${a.id}" target="_blank">
-                    <img src="${thumb}">
-                    <div class="cw-item-name">${a.name}</div>
-                    <div class="cw-item-price">${price ? `<span class="icon-robux-16x16"></span>${price}` : "Free"}</div>
-                </a>
-            `);
+            const card = document.createElement("a");
+            card.className = "cw-item";
+            card.href = `https://www.roblox.com/catalog/${a.id}`;
+            card.target = "_blank";
+            card.dataset.assetId = a.id;
+            
+            card.innerHTML = `
+                <div class="cw-item-thumb-placeholder"></div>
+                <img style="display:none">
+                <div class="cw-item-name">${a.name}</div>
+                <div class="cw-item-price">...</div>
+            `;
+            
+            grid.appendChild(card);
         });
 
-        root.querySelector("#cw-total-price").textContent = total.toLocaleString();
+        const assetIds = avatarData.assets.map(a => a.id).join(",");
+
+        // Step 2: Load thumbnails and update as they arrive
+        fetchRoblox.getAssetThumbnail(assetIds).then(assetThumbs => {
+            assetThumbs.data.forEach(t => {
+                const card = grid.querySelector(`[data-asset-id="${t.targetId}"]`);
+                if (card && t.imageUrl) {
+                    const img = card.querySelector("img");
+                    const placeholder = card.querySelector(".cw-item-thumb-placeholder");
+                    
+                    img.src = t.imageUrl;
+                    img.onload = () => {
+                        img.style.display = "block";
+                        if (placeholder) placeholder.remove();
+                    };
+                }
+            });
+        });
+
+        // Step 3: Load prices and update total
+        getAssetDetailsWithRetry(assetIds).then(assetDetails => {
+            let total = 0;
+            
+            assetDetails.data.forEach(a => {
+                const price = a.price ?? 0;
+                total += price;
+                
+                const card = grid.querySelector(`[data-asset-id="${a.id}"]`);
+                if (card) {
+                    const priceEl = card.querySelector(".cw-item-price");
+                    priceEl.innerHTML = price ? `<span class="icon-robux-16x16"></span>${price}` : "Free";
+                }
+            });
+
+            root.querySelector("#cw-total-price").textContent = total.toLocaleString();
+        });
+
+        // Step 4: Load avatar images
+        Promise.all([
+            fetchRoblox.getUserBust(userID),
+            fetchRoblox.getUserFullbody(userID)
+        ]).then(([bust, full]) => {
+            bustImg.src = bust.imageUrl || "";
+            fullImg.src = full.imageUrl || bust.imageUrl || "";
+
+            bustImg.onload = () => { bustImg.style.opacity = 1; bustPH.style.display = "none"; };
+            fullImg.onload = () => { fullImg.style.opacity = 1; fullPH.style.display = "none"; };
+        });
     })();
 }
 
