@@ -31,16 +31,6 @@ async function pollFriendRequests() {
   }
 }
 
-async function injectSpotifyPlayer() {
-  const value = await storage.get("enableSpotifyPlayer", false);
-  if (!value) return;
-
-  await waitForSelector("");
-  const sidebar = document.querySelector("");
-
-  
-}
-
 // Run once on load
 pollFriendRequests();
 setInterval(pollFriendRequests, 15_000);

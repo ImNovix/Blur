@@ -1,31 +1,33 @@
-// ==UserScript==
-// @name         Roblox Settings Blur Extension
-// @match        https://www.roblox.com/my/account*
-// @run-at       document-idle
-// ==/UserScript==
+import { Storage } from "../helpers/storage.js";
+import { blurSettingsOptions } from "../constaints/settings.js";
 
-(function () {
+const storage = new Storage();
+await storage.initDefaults();
+
+(async () => {
   "use strict";
 
-  const EXT_PARAM = "extension";
-  const EXT_VALUE = "blur";
+  const EXT_KEY = "extension";
+  const EXT_VAL = "blur";
+
+  let blurRoot = null;
+  let blurNav = null;
 
   /* -----------------------------
      Utils
   ----------------------------- */
-
   function waitFor(sel) {
-    return new Promise(r => {
+    return new Promise(resolve => {
       const el = document.querySelector(sel);
-      if (el) return r(el);
-      const o = new MutationObserver(() => {
-        const e = document.querySelector(sel);
-        if (e) {
-          o.disconnect();
-          r(e);
+      if (el) return resolve(el);
+      const obs = new MutationObserver(() => {
+        const found = document.querySelector(sel);
+        if (found) {
+          obs.disconnect();
+          resolve(found);
         }
       });
-      o.observe(document, { childList: true, subtree: true });
+      obs.observe(document.body, { childList: true, subtree: true });
     });
   }
 
@@ -33,190 +35,255 @@
     return new URLSearchParams(location.search);
   }
 
-  function setQuery(param, value) {
+  function setQuery(tab) {
     const q = getQuery();
-    if (value === null) q.delete(param);
-    else q.set(param, value);
-    history.replaceState({}, "", location.pathname + "?" + q.toString() + location.hash);
+    if (!tab) q.delete(EXT_KEY);
+    else q.set(EXT_KEY, `${EXT_VAL}/${tab}`);
+    history.replaceState({}, "", location.pathname + "?" + q + location.hash);
+  }
+
+  function getTab() {
+    const v = getQuery().get(EXT_KEY);
+    if (!v || !v.startsWith(EXT_VAL)) return null;
+    return v.split("/")[1] || "general";
   }
 
   /* -----------------------------
-     Extension Root
+     Root handling
   ----------------------------- */
-
-  let extRoot;
-
   function createRoot() {
-    if (extRoot) return;
-
+    if (blurRoot) return;
     const content = document.querySelector(".content");
-
-    extRoot = document.createElement("div");
-    extRoot.id = "blur-root";
-    extRoot.style.display = "none";
-    extRoot.style.height = "100%";
-
-    content.appendChild(extRoot);
+    if (!content) return;
+    blurRoot = document.createElement("div");
+    blurRoot.id = "blur-settings-container";
+    blurRoot.style.display = "none";
+    content.appendChild(blurRoot);
   }
 
-  function showExtension() {
+  function showBlur() {
     createRoot();
-    extRoot.style.display = "block";
-
-    document.querySelectorAll(".content > *:not(#blur-root)")
-      .forEach(el => el.style.display = "none");
+    blurRoot.style.display = "";
+    document.querySelectorAll(".content > *:not(#blur-settings-container)").forEach(el => (el.style.display = "none"));
   }
 
-  function hideExtension() {
-    if (!extRoot) return;
-    extRoot.style.display = "none";
-
-    document.querySelectorAll(".content > *:not(#blur-root)")
-      .forEach(el => el.style.display = "");
+  function hideBlur() {
+    if (!blurRoot) return;
+    blurRoot.style.display = "none";
+    document.querySelectorAll(".content > *:not(#blur-settings-container)").forEach(el => (el.style.display = ""));
   }
 
   /* -----------------------------
-     Render UI
+     UI
   ----------------------------- */
-
   function render(tab = "general") {
-    showExtension();
+    showBlur();
 
-    extRoot.innerHTML = `
-      <style>
-        .blur-wrap {
-          padding: 24px;
-          color: var(--text-primary);
-          font-family: var(--font-family-base);
-        }
-        .blur-title {
-          font-size: 24px;
-          font-weight: 700;
-          margin-bottom: 20px;
-        }
-        .blur-tabs {
-          display: flex;
-          gap: 12px;
-          margin-bottom: 20px;
-        }
-        .blur-tab {
-          padding: 8px 14px;
-          border-radius: 8px;
-          background: var(--surface-200);
-          cursor: pointer;
-        }
-        .blur-tab.active {
-          background: var(--brand-600);
-          color: white;
-        }
-        .blur-card {
-          background: var(--surface-100);
-          border-radius: 12px;
-          padding: 16px;
-          box-shadow: var(--shadow-medium);
-        }
-        .row {
-          display: flex;
-          justify-content: space-between;
-          padding: 12px 0;
-          border-bottom: 1px solid var(--surface-300);
-        }
-      </style>
+    blurRoot.innerHTML = `
+<div class="row page-content">
+  <div class="blur-settings">
 
-      <div class="blur-wrap">
-        <div class="blur-title">Blur Settings</div>
+    <button type="button"
+      class="btn-secondary-md btn-min-width"
+      id="blur-exit">
+      Return to Roblox Settings
+    </button>
 
-        <div class="blur-tabs">
-          <div class="blur-tab" data-tab="general">General</div>
-          <div class="blur-tab" data-tab="features">Features</div>
-          <div class="blur-tab" data-tab="advanced">Advanced</div>
-        </div>
+    <h1 class="container-title">Blur Settings</h1>
 
-        <div class="blur-card" id="panel"></div>
+    <div id="settings-container">
+      <div class="settings-left-navigation">
+        <ul class="menu-vertical transparent-background-menu" role="tablist">
+          ${Object.keys(blurSettingsOptions).map(t => renderTab(t, tab)).join("")}
+        </ul>
       </div>
-    `;
 
-    const panel = extRoot.querySelector("#panel");
+      <div class="tab-content rbx-tab-content">
+        <div class="tab-pane active">
+          <div class="section">
+            <div class="container-header hidden-xs">
+              <h3>${capitalize(tab)}</h3>
+            </div>
+            <div class="section-content">
+              ${renderPanel(tab)}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-    const draw = t => {
-      panel.innerHTML =
-        t === "features"
-          ? `<div class="row"><span>Better Avatars</span><input type="checkbox"></div>`
-          : t === "advanced"
-          ? `<div class="row"><span>Debug Mode</span><input type="checkbox"></div>`
-          : `<div class="row"><span>Enable Blur</span><input type="checkbox" checked></div>`;
+  </div>
+</div>
+`;
 
-      extRoot.querySelectorAll(".blur-tab")
-        .forEach(e => e.classList.toggle("active", e.dataset.tab === t));
+    // Exit button
+    blurRoot.querySelector("#blur-exit").onclick = () => {
+      setQuery(null);
+      route();
     };
 
-    extRoot.querySelectorAll(".blur-tab").forEach(t => {
-      t.onclick = () => {
-        setQuery(EXT_PARAM, EXT_VALUE + "/" + t.dataset.tab);
-        draw(t.dataset.tab);
+    // Tab buttons
+    blurRoot.querySelectorAll("[data-tab]").forEach(el => {
+      el.onclick = () => {
+        setQuery(el.dataset.tab);
+        route();
       };
     });
 
-    draw(tab);
+    // Attach toggle and input handlers
+    blurRoot.querySelectorAll("[data-storage-key]").forEach(el => {
+      const key = el.dataset.storageKey;
+      if (!key) return;
+
+      if (el.tagName.toLowerCase() === "button") {
+        // Toggle button
+        (async () => {
+          const value = await storage.get(key, false);
+          console.log(`Initial value for ${key}:`, value);
+          el.classList.toggle("on", value);
+          el.classList.toggle("off", !value);
+        })();
+
+        el.addEventListener("click", async () => {
+          const newState = !(await storage.get(key, false));
+          await storage.set(key, newState);
+          console.log(`Updated value for ${key}:`, newState);
+          el.classList.toggle("on", newState);
+          el.classList.toggle("off", !newState);
+        });
+
+      } else if (el.tagName.toLowerCase() === "input") {
+        // Text input
+        (async () => {
+          const value = await storage.get(key, "");
+          console.log(`Initial value for ${key}:`, value);
+          el.value = value;
+        })();
+
+        el.addEventListener("input", async () => {
+          await storage.set(key, el.value);
+          console.log(`Updated value for ${key}:`, el.value);
+        });
+      }
+    });
+  }
+
+  function renderTab(name, activeTab) {
+    return `
+<li role="tab" class="menu-option">
+  <a class="menu-option-content ${name === activeTab ? "active" : ""}" data-tab="${name}">
+    <span class="font-caption-header">${capitalize(name)}</span>
+  </a>
+</li>`;
+  }
+
+  function renderPanel(tab) {
+    const options = blurSettingsOptions[tab] || [];
+    return options.map(opt => {
+      if (opt.type === "toggle") return renderToggle(opt.name, opt.details, opt.storageKey);
+      if (opt.type === "string") return renderStringInput(opt.name, opt.details, opt.storageKey);
+      if (opt.type === "subLabel") return renderSubLabel(opt.name);
+      return "";
+    }).join("");
+  }
+
+  function renderToggle(label, details, storageKey) {
+    // Replace "/n" in your string with HTML line breaks
+    const formattedDetails = details ? details.replace(/\/n/g, "<br>") : "";
+    return `
+      <div class="feature-container section-content">
+        <div class="feature-name-container">
+          <div class="feature-text">
+            <div class="btn-toggle-label">${label}</div>
+            ${formattedDetails ? `<div class="feature-details">${formattedDetails}</div>` : ""}
+          </div>
+          <button type="button" class="btn-toggle feature-component off" data-storage-key="${storageKey}">
+            <span class="toggle-flip"></span>
+            <span class="toggle-on"></span>
+            <span class="toggle-off"></span>
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderStringInput(label, details, storageKey) {
+    const formattedDetails = details ? details.replace(/\/n/g, "<br>") : "";
+    return `
+      <div class="feature-container section-content">
+        <div class="feature-name-container">
+          <div class="feature-text" style="flex: 1;">
+            <div class="btn-toggle-label">${label}</div>
+            ${formattedDetails ? `<div class="feature-details">${formattedDetails}</div>` : ""}
+            <input type="text" data-storage-key="${storageKey}" class="form-control" />
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderSubLabel(label) {
+    return `<div class="feature-container section-content"><div class="feature-name-container"><div class="btn-toggle-label">${label}</div></div></div>`;
+  }
+
+  function capitalize(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
   /* -----------------------------
-     Sidebar Integration
+     Sidebar injection
   ----------------------------- */
-
   async function injectSidebar() {
-    const list = await waitFor("ul.menu-vertical");
-    if (list.querySelector("#blur")) return;
+    const list = await waitFor(
+      "#settings-container > div.settings-left-navigation > ul"
+    );
+
+    if (list.querySelector("#blur-nav")) {
+      blurNav = list.querySelector("#blur-nav");
+      return;
+    }
 
     const base = list.querySelector("li.menu-option");
     const clone = base.cloneNode(true);
 
-    clone.id = "blur";
+    clone.id = "blur-nav";
     clone.querySelector(".font-caption-header").textContent = "Blur";
-    clone.querySelector(".rbx-tab-subtitle").textContent = "";
+    clone.querySelector(".rbx-tab-subtitle")?.remove();
 
     const a = clone.querySelector("a");
-    a.href = "?extension=" + EXT_VALUE;
+    a.href = "?extension=blur/general";
 
     a.onclick = e => {
       e.preventDefault();
-      setQuery(EXT_PARAM, EXT_VALUE + "/general");
-      render("general");
-
-      list.querySelectorAll(".menu-option-content")
-        .forEach(a => a.classList.remove("active"));
-
-      clone.querySelector(".menu-option-content").classList.add("active");
+      setQuery("general");
+      route();
     };
 
+    // Never inject active class on the Roblox page button
+    a.classList.remove("active");
+    a.removeAttribute("aria-current");
+
     list.appendChild(clone);
+    blurNav = clone;
   }
 
   /* -----------------------------
      Router
   ----------------------------- */
-
   function route() {
-    const q = getQuery();
-    const extTab = q.get(EXT_PARAM);
-
-    if (extTab && extTab.startsWith(EXT_VALUE)) {
-      const tab = extTab.split("/")[1];
-      render(tab || "general");
-
-      document.querySelectorAll(".menu-option-content")
-        .forEach(a => a.classList.remove("active"));
-      document.querySelector("#blur .menu-option-content")?.classList.add("active");
+    const tab = getTab();
+    if (tab) {
+      render(tab);
     } else {
-      hideExtension();
+      hideBlur();
     }
   }
 
   /* -----------------------------
      Init
   ----------------------------- */
-
-  injectSidebar();
+  await injectSidebar();
   route();
   window.addEventListener("popstate", route);
+
 })();

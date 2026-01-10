@@ -34,7 +34,8 @@ const pageFeatures = [
   },
   {
     url: "https://www.roblox.com/my/account*",
-    scripts: ["src/pages/settings.js"]
+    scripts: ["src/pages/settings.js"],
+    styles: ["src/pages/css/settings.css"]
   }
 ];
 

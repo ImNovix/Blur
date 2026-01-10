@@ -1,0 +1,104 @@
+/* Root container */
+#blur-settings-container {
+  padding: 25px;
+  color: #e0e0e0;
+}
+
+.section-content {
+    background-color: transparent !important;
+}
+
+/* Title */
+.blur-settings h1.container-title {
+  font-size: 30px;
+  font-weight: 600;
+  margin-bottom: 25px;
+  color: #ffffff;
+}
+
+/* Feature container (toggles, inputs, etc.) */
+.feature-container {
+  background-color: #2a2a2a;
+  border-radius: 10px;
+  padding: 18px 20px;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background-color 0.2s ease;
+}
+
+.feature-container:hover {
+  background-color: #333333;
+}
+
+/* Feature text wrapper */
+.feature-text {
+  font-size: 18px;
+  line-height: 1.4;
+  color: #f0f0f0;
+  flex: 1;
+}
+
+/* Labels inside feature */
+.btn-toggle-label {
+  font-weight: 500;
+  font-size: 20px;
+  margin-bottom: 6px;
+  color: #ffffff;
+}
+
+/* Feature details */
+.feature-details {
+  font-size: 16px;
+  color: #b0b0b0;
+  line-height: 1.5;
+  white-space: pre-line; /* preserves <br> and line breaks */
+  margin-bottom: 6px;
+}
+
+/* Text inputs */
+input.form-control {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #555;
+  background-color: #1f1f1f;
+  color: #fff;
+  font-size: 16px;
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+}
+
+input.form-control:focus {
+  outline: none;
+  border-color: #0a84ff;
+  box-shadow: 0 0 4px #0a84ff50;
+}
+
+/* Optional: Align toggle to right */
+.feature-name-container {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 15px;
+}
+
+/* Responsive text for smaller screens */
+@media (max-width: 768px) {
+  .feature-text {
+    font-size: 16px;
+  }
+
+  .btn-toggle-label {
+    font-size: 18px;
+  }
+
+  .feature-details {
+    font-size: 14px;
+  }
+
+  input.form-control {
+    font-size: 14px;
+    padding: 6px 10px;
+  }
+}

@@ -392,7 +392,7 @@ async function renameFriendsRow() {
 }
 
 // Initial runs
-injectUnreleasedVersionPopup();
+//injectUnreleasedVersionPopup(); annoying.
 hideFriendsStatus();
 injectHomeHeader();
 injectBestFriendsCarousel();
