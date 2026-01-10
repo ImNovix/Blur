@@ -1,8 +1,14 @@
+// ==UserScript==
+// @name         Roblox Settings Blur Extension
+// @match        https://www.roblox.com/my/account*
+// @run-at       document-idle
+// ==/UserScript==
+
 (function () {
   "use strict";
 
   const EXT_PARAM = "extension";
-  const EXT_VALUE = "my-extension";
+  const EXT_VALUE = "blur";
 
   /* -----------------------------
      Utils
@@ -46,7 +52,7 @@
     const content = document.querySelector(".content");
 
     extRoot = document.createElement("div");
-    extRoot.id = "my-extension-root";
+    extRoot.id = "blur-root";
     extRoot.style.display = "none";
     extRoot.style.height = "100%";
 
@@ -57,7 +63,7 @@
     createRoot();
     extRoot.style.display = "block";
 
-    document.querySelectorAll(".content > *:not(#my-extension-root)")
+    document.querySelectorAll(".content > *:not(#blur-root)")
       .forEach(el => el.style.display = "none");
   }
 
@@ -65,7 +71,7 @@
     if (!extRoot) return;
     extRoot.style.display = "none";
 
-    document.querySelectorAll(".content > *:not(#my-extension-root)")
+    document.querySelectorAll(".content > *:not(#blur-root)")
       .forEach(el => el.style.display = "");
   }
 
@@ -78,32 +84,32 @@
 
     extRoot.innerHTML = `
       <style>
-        .ext-wrap {
+        .blur-wrap {
           padding: 24px;
           color: var(--text-primary);
           font-family: var(--font-family-base);
         }
-        .ext-title {
+        .blur-title {
           font-size: 24px;
           font-weight: 700;
           margin-bottom: 20px;
         }
-        .ext-tabs {
+        .blur-tabs {
           display: flex;
           gap: 12px;
           margin-bottom: 20px;
         }
-        .ext-tab {
+        .blur-tab {
           padding: 8px 14px;
           border-radius: 8px;
           background: var(--surface-200);
           cursor: pointer;
         }
-        .ext-tab.active {
+        .blur-tab.active {
           background: var(--brand-600);
           color: white;
         }
-        .ext-card {
+        .blur-card {
           background: var(--surface-100);
           border-radius: 12px;
           padding: 16px;
@@ -117,16 +123,16 @@
         }
       </style>
 
-      <div class="ext-wrap">
-        <div class="ext-title">My Extension</div>
+      <div class="blur-wrap">
+        <div class="blur-title">Blur Settings</div>
 
-        <div class="ext-tabs">
-          <div class="ext-tab" data-tab="general">General</div>
-          <div class="ext-tab" data-tab="features">Features</div>
-          <div class="ext-tab" data-tab="advanced">Advanced</div>
+        <div class="blur-tabs">
+          <div class="blur-tab" data-tab="general">General</div>
+          <div class="blur-tab" data-tab="features">Features</div>
+          <div class="blur-tab" data-tab="advanced">Advanced</div>
         </div>
 
-        <div class="ext-card" id="panel"></div>
+        <div class="blur-card" id="panel"></div>
       </div>
     `;
 
@@ -138,13 +144,13 @@
           ? `<div class="row"><span>Better Avatars</span><input type="checkbox"></div>`
           : t === "advanced"
           ? `<div class="row"><span>Debug Mode</span><input type="checkbox"></div>`
-          : `<div class="row"><span>Enable Extension</span><input type="checkbox" checked></div>`;
+          : `<div class="row"><span>Enable Blur</span><input type="checkbox" checked></div>`;
 
-      extRoot.querySelectorAll(".ext-tab")
+      extRoot.querySelectorAll(".blur-tab")
         .forEach(e => e.classList.toggle("active", e.dataset.tab === t));
     };
 
-    extRoot.querySelectorAll(".ext-tab").forEach(t => {
+    extRoot.querySelectorAll(".blur-tab").forEach(t => {
       t.onclick = () => {
         setQuery(EXT_PARAM, EXT_VALUE + "/" + t.dataset.tab);
         draw(t.dataset.tab);
@@ -160,13 +166,13 @@
 
   async function injectSidebar() {
     const list = await waitFor("ul.menu-vertical");
-    if (list.querySelector("#my-extension")) return;
+    if (list.querySelector("#blur")) return;
 
     const base = list.querySelector("li.menu-option");
     const clone = base.cloneNode(true);
 
-    clone.id = "my-extension";
-    clone.querySelector(".font-caption-header").textContent = "My Extension";
+    clone.id = "blur";
+    clone.querySelector(".font-caption-header").textContent = "Blur";
     clone.querySelector(".rbx-tab-subtitle").textContent = "";
 
     const a = clone.querySelector("a");
@@ -200,7 +206,7 @@
 
       document.querySelectorAll(".menu-option-content")
         .forEach(a => a.classList.remove("active"));
-      document.querySelector("#my-extension .menu-option-content")?.classList.add("active");
+      document.querySelector("#blur .menu-option-content")?.classList.add("active");
     } else {
       hideExtension();
     }

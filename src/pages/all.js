@@ -1,6 +1,11 @@
+import { waitForSelector } from "../helpers/elements.js";
 import { fetchRoblox } from "../helpers/robloxAPI.js";
+import { Storage } from "../helpers/storage.js"
 
 const notified = new Set();
+
+const storage = new Storage();
+await storage.initDefaults();
 
 // -----------------------------
 // Friend request polling
@@ -24,6 +29,16 @@ async function pollFriendRequests() {
   } catch (e) {
     console.error("[content] Friend request poll failed", e);
   }
+}
+
+async function injectSpotifyPlayer() {
+  const value = await storage.get("enableSpotifyPlayer", false);
+  if (!value) return;
+
+  await waitForSelector("");
+  const sidebar = document.querySelector("");
+
+  
 }
 
 // Run once on load
