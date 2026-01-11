@@ -1,23 +1,27 @@
-/* Root container */
-#blur-settings-container {
+/* ================= Dark Theme ================= */
+.dark-theme #blur-settings-container {
   padding: 25px;
   color: #e0e0e0;
 }
 
-.section-content {
-    background-color: transparent !important;
+.dark-theme .section-content {
+  background-color: transparent !important;
 }
 
-/* Title */
-.blur-settings h1.container-title {
-  font-size: 30px;
-  font-weight: 600;
-  margin-bottom: 25px;
+.dark-theme .container-header h3 {
+  font-size: 26px;
+  font-weight: 900;
   color: #ffffff;
 }
 
-/* Feature container (toggles, inputs, etc.) */
-.feature-container {
+.dark-theme .blur-settings h1.container-title {
+  font-size: 38px;
+  font-weight: 900;
+  margin: 5px 0;
+  color: #ffffff;
+}
+
+.dark-theme .feature-container {
   background-color: #2a2a2a;
   border-radius: 10px;
   padding: 18px 20px;
@@ -28,37 +32,33 @@
   transition: background-color 0.2s ease;
 }
 
-.feature-container:hover {
+.dark-theme .feature-container:hover {
   background-color: #333333;
 }
 
-/* Feature text wrapper */
-.feature-text {
+.dark-theme .feature-text {
+  flex: 1;
   font-size: 18px;
   line-height: 1.4;
   color: #f0f0f0;
-  flex: 1;
 }
 
-/* Labels inside feature */
-.btn-toggle-label {
-  font-weight: 500;
+.dark-theme .btn-toggle-label {
   font-size: 20px;
+  font-weight: 500;
   margin-bottom: 6px;
   color: #ffffff;
 }
 
-/* Feature details */
-.feature-details {
+.dark-theme .feature-details {
   font-size: 16px;
-  color: #b0b0b0;
   line-height: 1.5;
-  white-space: pre-line; /* preserves <br> and line breaks */
+  color: #b0b0b0;
+  white-space: pre-line; /* preserves line breaks */
   margin-bottom: 6px;
 }
 
-/* Text inputs */
-input.form-control {
+.dark-theme input.form-control {
   flex: 1;
   padding: 8px 12px;
   border-radius: 6px;
@@ -69,35 +69,136 @@ input.form-control {
   transition: border 0.2s ease, box-shadow 0.2s ease;
 }
 
-input.form-control:focus {
+.dark-theme input.form-control:focus {
   outline: none;
   border-color: #0a84ff;
   box-shadow: 0 0 4px #0a84ff50;
 }
 
-/* Optional: Align toggle to right */
-.feature-name-container {
+.dark-theme .feature-name-container {
   display: flex;
   align-items: center;
   width: 100%;
   gap: 15px;
 }
 
-/* Responsive text for smaller screens */
+.dark-theme .sub-label {
+  font-size: 20px;
+  font-weight: 900;
+  text-align: center;
+  width: 100%;
+}
+
+/* ================= Light Theme ================= */
+.light-theme #blur-settings-container {
+  padding: 25px;
+  color: #1a1a1a;
+}
+
+.light-theme .section-content {
+  background-color: transparent !important;
+}
+
+.light-theme .container-header h3 {
+  font-size: 26px;
+  font-weight: 900;
+  color: #1a1a1a;
+}
+
+.light-theme .blur-settings h1.container-title {
+  font-size: 38px;
+  font-weight: 900;
+  margin: 5px 0;
+  color: #1a1a1a;
+}
+
+.light-theme .feature-container {
+  background-color: #f0f0f0;
+  border-radius: 10px;
+  padding: 18px 20px;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background-color 0.2s ease;
+}
+
+.light-theme .feature-container:hover {
+  background-color: #e0e0e0;
+}
+
+.light-theme .feature-text {
+  flex: 1;
+  font-size: 18px;
+  line-height: 1.4;
+  color: #1a1a1a;
+}
+
+.light-theme .btn-toggle-label {
+  font-size: 20px;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: #1a1a1a;
+}
+
+.light-theme .feature-details {
+  font-size: 16px;
+  line-height: 1.5;
+  color: #4a4a4a;
+  white-space: pre-line; /* preserves line breaks */
+  margin-bottom: 6px;
+}
+
+.light-theme input.form-control {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background-color: #ffffff;
+  color: #1a1a1a;
+  font-size: 16px;
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+}
+
+.light-theme input.form-control:focus {
+  outline: none;
+  border-color: #0a84ff;
+  box-shadow: 0 0 4px #0a84ff50;
+}
+
+.light-theme .feature-name-container {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 15px;
+}
+
+.light-theme .sub-label {
+  font-size: 20px;
+  font-weight: 900;
+  text-align: center;
+  width: 100%;
+}
+
+/* ================= Responsive adjustments ================= */
 @media (max-width: 768px) {
-  .feature-text {
+  .dark-theme .feature-text,
+  .light-theme .feature-text {
     font-size: 16px;
   }
 
-  .btn-toggle-label {
+  .dark-theme .btn-toggle-label,
+  .light-theme .btn-toggle-label {
     font-size: 18px;
   }
 
-  .feature-details {
+  .dark-theme .feature-details,
+  .light-theme .feature-details {
     font-size: 14px;
   }
 
-  input.form-control {
+  .dark-theme input.form-control,
+  .light-theme input.form-control {
     font-size: 14px;
     padding: 6px 10px;
   }

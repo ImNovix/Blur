@@ -11,11 +11,24 @@ export class Storage {
     this.area = area;
 
     this.DEFAULTS = {
+      // Internal
       hideFriendStatus: false,
-      removeConnectButton: true,
+
+      // General
       renameConnectionsToFriends: true,
+
+      // Home
+      removeConnectButton: true,
       celerbateUsersBirthday: true,
       homeGreeting: "{greeting}, {displayName}!",
+      
+      // Profile
+      updateDisplayNameChatColor: true,
+      showMuturalFriends: true,
+      injectCustomCurrenlyWearing: true,
+
+      // Experiments
+      showNotifactions: false,
     };
 
     this.PER_USER_KEYS = ["bestFriends"];

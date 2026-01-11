@@ -30,5 +30,33 @@ export const blurSettingsOptions = {
             type: "toggle",
             storageKey: "celerbateUsersBirthday"
         }
+    ],
+    profile: [
+        {
+            name: "Show Mutral Friends",
+            details: "Shows the amount of friends you share with another user",
+            type: "toggle",
+            storageKey: "showMuturalFriends"
+        },
+        {
+            name: "Display Name Chat Color",
+            details: "Changes the color of the user's display name to match their in-game chat color",
+            type: "toggle",
+            storageKey: "displayNameChatColor"
+        },
+        {
+            name: "Show Revamped Currently Wearing",
+            details: "Shows a better currenly wearing section that shows more details and the users outfits",
+            type: "toggle",
+            storageKey: "injectCustomCurrenlyWearing"
+        }
+    ],
+    expermients: [
+        {   
+            name: "Show Notifactions",
+            details: "Sends a notifaction when you have recieved a new friend request.",
+            storageKey: "showNotifactions",
+            type: "toggle"
+        }
     ]
 }

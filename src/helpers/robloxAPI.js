@@ -227,39 +227,50 @@ export class fetchRoblox {
     }
 
     static async getUserOutfits(userID) {
-        // Fetch outfit list
-        const outfitRes = await fetchRobloxAPI("avatar", `v2/avatar/users/${userID}/outfits?itemsPerPage=25&isEditable=true`);
+        let allOutfits = [];
+        let paginationToken = null;
 
-        const outfits = outfitRes.data;
+        do {
+            // Build query string
+            const url = new URL(`v2/avatar/users/${userID}/outfits`, "https://www.roblox.com/");
+            url.searchParams.set("itemsPerPage", "25");
+            url.searchParams.set("isEditable", "true");
+            if (paginationToken) url.searchParams.set("cursor", paginationToken);
 
-        // Build ID list for thumbnails
-        const ids = outfits.map(o => o.id).join(",");
+            // Fetch outfit page
+            const res = await fetchRobloxAPI("avatar", url.pathname + url.search);
+            const outfits = res.data || [];
+            allOutfits.push(...outfits);
 
-        // Fetch thumbnails
-        const thumbRes = await fetchRoblox.getOutfitThumbnail(ids);
+            // Get next page token
+            paginationToken = res.paginationToken || "";
 
-        // Build map: outfitId → imageUrl
+        } while (paginationToken);
+
+        // Fetch thumbnails in batches of 100 (Roblox API limit for batch)
+        const batches = [];
+        for (let i = 0; i < allOutfits.length; i += 100) {
+            batches.push(allOutfits.slice(i, i + 100));
+        }
+
         const thumbnailMap = new Map();
-        thumbRes.data.forEach(t => {
-            thumbnailMap.set(t.targetId, t.imageUrl);
-        });
+        for (const batch of batches) {
+            const ids = batch.map(o => o.id).join(",");
+            const thumbRes = await fetchRoblox.getOutfitThumbnail(ids);
+            thumbRes.data.forEach(t => thumbnailMap.set(t.targetId, t.imageUrl));
+        }
 
-        // Fetch deep details for every outfit in parallel
+        // Fetch detailed outfit info in parallel
         const detailed = await Promise.all(
-            outfits.map(async outfit => {
+            allOutfits.map(async outfit => {
                 const details = await fetchRoblox.getOutfitDetails(outfit.id);
 
                 return {
-                    // Base outfit metadata
                     id: outfit.id,
                     name: outfit.name,
                     isEditable: outfit.isEditable,
                     outfitType: outfit.outfitType,
-
-                    // Thumbnail
                     thumbnail: thumbnailMap.get(outfit.id) || null,
-
-                    // Full avatar configuration
                     assets: details.assets,
                     bodyColor3s: details.bodyColor3s,
                     scale: details.scale,
@@ -295,6 +306,26 @@ export class fetchRoblox {
 
         return res;
     }
+
+    static async getAnimationPrice(assetId) {
+        // Fetch bundles for this animation
+        const res = await fetchRobloxAPI("catalog", `v1/assets/${assetId}/bundles?limit=10&sortOrder=Asc`);
+        const data = await res.json();
+
+        if (!data.data || data.data.length === 0) return 0;
+
+        // Take the first bundle that contains this animation
+        const bundle = data.data.find(b => b.items.some(i => i.id === assetId));
+
+        if (!bundle || !bundle.product) return 0;
+
+        return {
+            bundleId: bundle.id,
+            price: bundle.product.priceInRobux ?? 0,
+            bundleItems: bundle.items.map(i => i.id)
+        };
+    }
+
 
     // --- Chat System ---
     static async ableToChatWithUser(userID, converastationID) {

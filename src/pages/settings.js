@@ -12,6 +12,7 @@ await storage.initDefaults();
 
   let blurRoot = null;
   let blurNav = null;
+  let hasRendered = false; // NEW: ensures the panel renders only once
 
   /* -----------------------------
      Utils
@@ -77,6 +78,20 @@ await storage.initDefaults();
      UI
   ----------------------------- */
   function render(tab = "general") {
+    // If we've already rendered, only update tab content and active state
+    if (hasRendered) {
+      const titleEl = blurRoot.querySelector(".container-header h3");
+      const panelEl = blurRoot.querySelector(".section-content");
+      if (titleEl) titleEl.textContent = capitalize(tab);
+      if (panelEl) panelEl.innerHTML = renderPanel(tab);
+
+      blurRoot.querySelectorAll("[data-tab]").forEach(el => {
+        el.classList.toggle("active", el.dataset.tab === tab);
+      });
+      return;
+    }
+
+    hasRendered = true; // mark that we've rendered the panel
     showBlur();
 
     blurRoot.innerHTML = `
@@ -139,7 +154,6 @@ await storage.initDefaults();
         // Toggle button
         (async () => {
           const value = await storage.get(key, false);
-          console.log(`Initial value for ${key}:`, value);
           el.classList.toggle("on", value);
           el.classList.toggle("off", !value);
         })();
@@ -147,7 +161,6 @@ await storage.initDefaults();
         el.addEventListener("click", async () => {
           const newState = !(await storage.get(key, false));
           await storage.set(key, newState);
-          console.log(`Updated value for ${key}:`, newState);
           el.classList.toggle("on", newState);
           el.classList.toggle("off", !newState);
         });
@@ -156,13 +169,11 @@ await storage.initDefaults();
         // Text input
         (async () => {
           const value = await storage.get(key, "");
-          console.log(`Initial value for ${key}:`, value);
           el.value = value;
         })();
 
         el.addEventListener("input", async () => {
           await storage.set(key, el.value);
-          console.log(`Updated value for ${key}:`, el.value);
         });
       }
     });
@@ -188,7 +199,6 @@ await storage.initDefaults();
   }
 
   function renderToggle(label, details, storageKey) {
-    // Replace "/n" in your string with HTML line breaks
     const formattedDetails = details ? details.replace(/\/n/g, "<br>") : "";
     return `
       <div class="feature-container section-content">
@@ -223,7 +233,7 @@ await storage.initDefaults();
   }
 
   function renderSubLabel(label) {
-    return `<div class="feature-container section-content"><div class="feature-name-container"><div class="btn-toggle-label">${label}</div></div></div>`;
+    return `<div class="feature-container section-content"><div class="feature-name-container"><div class="sub-label">${label}</div></div></div>`;
   }
 
   function capitalize(str) {
