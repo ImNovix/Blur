@@ -1,204 +1,166 @@
-/* ================= Dark Theme ================= */
-.dark-theme #blur-settings-container {
+/* ================= Shared Styles ================= */
+#blur-settings-container.blur-root {
   padding: 25px;
+}
+
+.blur-section-content {
+  background-color: transparent !important;
+}
+
+.blur-container-header h3 {
+  font-size: 26px;
+  font-weight: 900;
+}
+
+.blur-settings h1.blur-container-title {
+  font-size: 38px;
+  font-weight: 900;
+  margin: 5px 0;
+}
+
+.blur-feature-container {
+  border-radius: 10px;
+  padding: 18px 20px;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background-color 0.2s ease;
+}
+
+.blur-feature-container:hover {
+  transition: background-color 0.2s ease;
+}
+
+.blur-feature-text {
+  flex: 1;
+  font-size: 18px;
+  line-height: 1.4;
+}
+
+.blur-btn-toggle-label {
+  font-size: 20px;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.blur-feature-details {
+  font-size: 16px;
+  line-height: 1.5;
+  white-space: pre-line; /* preserves line breaks */
+  margin-bottom: 6px;
+}
+
+.blur-input.form-control {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid;
+  font-size: 16px;
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+}
+
+.blur-input.form-control:focus {
+  outline: none;
+  border-color: #0a84ff;
+  box-shadow: 0 0 4px #0a84ff50;
+}
+
+.blur-feature-name-container {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 15px;
+}
+
+.blur-sub-label {
+  font-size: 20px;
+  font-weight: 900;
+  text-align: center;
+  width: 100%;
+}
+
+/* ================= Dark Theme Colors ================= */
+.dark-theme {
   color: #e0e0e0;
 }
 
-.dark-theme .section-content {
-  background-color: transparent !important;
-}
-
-.dark-theme .container-header h3 {
-  font-size: 26px;
-  font-weight: 900;
+.dark-theme .blur-container-header h3,
+.dark-theme .blur-settings h1.blur-container-title,
+.dark-theme .blur-btn-toggle-label {
   color: #ffffff;
 }
 
-.dark-theme .blur-settings h1.container-title {
-  font-size: 38px;
-  font-weight: 900;
-  margin: 5px 0;
-  color: #ffffff;
-}
-
-.dark-theme .feature-container {
+.dark-theme .blur-feature-container {
   background-color: #2a2a2a;
-  border-radius: 10px;
-  padding: 18px 20px;
-  margin-bottom: 15px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  transition: background-color 0.2s ease;
 }
 
-.dark-theme .feature-container:hover {
+.dark-theme .blur-feature-container:hover {
   background-color: #333333;
 }
 
-.dark-theme .feature-text {
-  flex: 1;
-  font-size: 18px;
-  line-height: 1.4;
+.dark-theme .blur-feature-text {
   color: #f0f0f0;
 }
 
-.dark-theme .btn-toggle-label {
-  font-size: 20px;
-  font-weight: 500;
-  margin-bottom: 6px;
-  color: #ffffff;
-}
-
-.dark-theme .feature-details {
-  font-size: 16px;
-  line-height: 1.5;
+.dark-theme .blur-feature-details {
   color: #b0b0b0;
-  white-space: pre-line; /* preserves line breaks */
-  margin-bottom: 6px;
 }
 
-.dark-theme input.form-control {
-  flex: 1;
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: 1px solid #555;
+.dark-theme .blur-input.form-control {
   background-color: #1f1f1f;
   color: #fff;
-  font-size: 16px;
-  transition: border 0.2s ease, box-shadow 0.2s ease;
+  border-color: #555;
 }
 
-.dark-theme input.form-control:focus {
-  outline: none;
-  border-color: #0a84ff;
-  box-shadow: 0 0 4px #0a84ff50;
-}
-
-.dark-theme .feature-name-container {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  gap: 15px;
-}
-
-.dark-theme .sub-label {
-  font-size: 20px;
-  font-weight: 900;
-  text-align: center;
-  width: 100%;
-}
-
-/* ================= Light Theme ================= */
-.light-theme #blur-settings-container {
-  padding: 25px;
+/* ================= Light Theme Colors ================= */
+.light-theme {
   color: #1a1a1a;
 }
 
-.light-theme .section-content {
-  background-color: transparent !important;
-}
-
-.light-theme .container-header h3 {
-  font-size: 26px;
-  font-weight: 900;
+.light-theme .blur-container-header h3,
+.light-theme .blur-settings h1.blur-container-title,
+.light-theme .blur-btn-toggle-label {
   color: #1a1a1a;
 }
 
-.light-theme .blur-settings h1.container-title {
-  font-size: 38px;
-  font-weight: 900;
-  margin: 5px 0;
-  color: #1a1a1a;
-}
-
-.light-theme .feature-container {
+.light-theme .blur-feature-container {
   background-color: #f0f0f0;
-  border-radius: 10px;
-  padding: 18px 20px;
-  margin-bottom: 15px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  transition: background-color 0.2s ease;
 }
 
-.light-theme .feature-container:hover {
+.light-theme .blur-feature-container:hover {
   background-color: #e0e0e0;
 }
 
-.light-theme .feature-text {
-  flex: 1;
-  font-size: 18px;
-  line-height: 1.4;
+.light-theme .blur-feature-text {
   color: #1a1a1a;
 }
 
-.light-theme .btn-toggle-label {
-  font-size: 20px;
-  font-weight: 500;
-  margin-bottom: 6px;
-  color: #1a1a1a;
-}
-
-.light-theme .feature-details {
-  font-size: 16px;
-  line-height: 1.5;
+.light-theme .blur-feature-details {
   color: #4a4a4a;
-  white-space: pre-line; /* preserves line breaks */
-  margin-bottom: 6px;
 }
 
-.light-theme input.form-control {
-  flex: 1;
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
+.light-theme .blur-input.form-control {
   background-color: #ffffff;
   color: #1a1a1a;
-  font-size: 16px;
-  transition: border 0.2s ease, box-shadow 0.2s ease;
-}
-
-.light-theme input.form-control:focus {
-  outline: none;
-  border-color: #0a84ff;
-  box-shadow: 0 0 4px #0a84ff50;
-}
-
-.light-theme .feature-name-container {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  gap: 15px;
-}
-
-.light-theme .sub-label {
-  font-size: 20px;
-  font-weight: 900;
-  text-align: center;
-  width: 100%;
+  border-color: #ccc;
 }
 
 /* ================= Responsive adjustments ================= */
 @media (max-width: 768px) {
-  .dark-theme .feature-text,
-  .light-theme .feature-text {
+  .blur-feature-text {
     font-size: 16px;
   }
 
-  .dark-theme .btn-toggle-label,
-  .light-theme .btn-toggle-label {
+  .blur-btn-toggle-label {
     font-size: 18px;
   }
 
-  .dark-theme .feature-details,
-  .light-theme .feature-details {
+  .blur-feature-details {
     font-size: 14px;
   }
 
-  .dark-theme input.form-control,
-  .light-theme input.form-control {
+  .blur-input.form-control {
     font-size: 14px;
     padding: 6px 10px;
   }

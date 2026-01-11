@@ -9,6 +9,7 @@ await storage.initDefaults();
 
 const userID = getProfileUserIdFromUrl();
 const authID = (await fetchRoblox.getAuth()).id;
+const userRes = await fetchRoblox.getUserDetails(userID);
 
 function getProfileUserIdFromUrl() {
     const m = window.location.pathname.match(/\/users\/(\d+)(?:\/|$)/i);
@@ -38,11 +39,90 @@ async function updateFriendButton() {
   }
 }
 
-// previous username count, friends since, join date, and locale
 async function addBetterStats() {
-    await waitForSelector("");
-    const stats = document.querySelector("");
+    const showUsernameCount = await storage.get('showUsernameCount', true);
+    const showRevampedJoinDate = await storage.get('showRevampedJoinDate', true);
+    const showFriendsSince = await storage.get('showFriendsSince', true);
 
+    // --- MutationObserver to remove Roblox's default stats container dynamically ---
+    const observer = new MutationObserver(mutations => {
+        for (const mutation of mutations) {
+            for (const node of mutation.addedNodes) {
+                if (node.id === 'profile-statistics-container') {
+                    node.remove();
+                }
+            }
+        }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    // --- Remove it immediately if it already exists ---
+    const defaultStats = document.querySelector('#profile-statistics-container');
+    if (defaultStats) defaultStats.remove();
+
+    // --- Wait for tooltip element ---
+    const tooltip = await waitForSelector('.tooltip-pastnames');
+    if (!tooltip) return;
+
+    // Wait until tooltip's data-original-title has content
+    await new Promise(resolve => {
+        const check = () => {
+            if (tooltip.getAttribute('data-original-title')?.trim()) resolve();
+            else requestAnimationFrame(check);
+        };
+        check();
+    });
+
+    // --- Previous Usernames ---
+    if (showUsernameCount) {
+        const usernames = tooltip
+            .getAttribute('data-original-title')
+            .split(',')
+            .map(u => u.trim())
+            .filter(Boolean);
+
+        // Update Roblox's existing span with count
+        const pastUsernameSpan = document.querySelector('.profile-name-history .text-pastname');
+        if (pastUsernameSpan) {
+            const originalText = pastUsernameSpan.textContent.split('(')[0].trim();
+            pastUsernameSpan.textContent = `${originalText} (${usernames.length})`;
+        }
+    }
+
+    // --- Wait for footer ---
+    const footer = await waitForSelector('.profile-about-footer');
+    if (!footer) return;
+
+    // Helper to create vertical block stats
+    const createStatDiv = (text) => {
+        const div = document.createElement('div');
+        div.className = 'profile-name-history';
+        div.style.display = 'block';       // vertical stacking
+        div.style.marginTop = '4px';       // spacing
+        div.innerHTML = `<span class="text-pastname ng-binding">${text}</span>`;
+        return div;
+    };
+
+    // --- Friends Since ---
+    if (showFriendsSince) {
+        const friendsSinceDate = await fetchRoblox.getFriendshipDuration(userID);
+        if (friendsSinceDate && friendsSinceDate !== "Unknown") {
+            const friendsDiv = createStatDiv(`Friends Since: ${friendsSinceDate}`);
+            footer.appendChild(friendsDiv);
+        }
+    }
+
+    // --- Join Date ---
+    if (showRevampedJoinDate && userRes?.created) {
+        const createdDate = new Date(userRes.created);
+        const formattedDate = createdDate.toLocaleDateString(undefined, {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+        const joinDiv = createStatDiv(`Joined: ${formattedDate}`);
+        footer.appendChild(joinDiv);
+    }
 }
 
 async function updateSocialRow() {
@@ -60,7 +140,7 @@ async function updateSocialRow() {
 
     // Mutural Count
     if (!(Number(userID) === authID)) {
-        const showMuturals = await storage.get('showMuturalFriends', true);
+        const showMuturals = await storage.get('showMutualFriends', true);
         if (showMuturals) {
             await waitForSelector('.profile-header-social-counts');
             const mutualsRes = await fetchRoblox.getMutualFriends(userID);
@@ -310,7 +390,7 @@ async function updateDisplayNameChatColor() {
   const enabled = storage.get("updateDisplayNameChatColor", true);
   if (!enabled) return;
 
-  const { name } = await fetchRoblox.getUserDetails(userID);
+  const { name } = userRes;
 
   const getUsernameChatColor = (username) => {
     let value = 0;
@@ -360,3 +440,4 @@ if (!(Number(userID) === authID)) {
 injectCurrentlyWearing();
 updateDisplayNameChatColor();
 updateSocialRow();
+addBetterStats();

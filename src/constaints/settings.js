@@ -33,10 +33,10 @@ export const blurSettingsOptions = {
     ],
     profile: [
         {
-            name: "Show Mutral Friends",
+            name: "Show Mutual Friends",
             details: "Shows the amount of friends you share with another user",
             type: "toggle",
-            storageKey: "showMuturalFriends"
+            storageKey: "showMutualFriends"
         },
         {
             name: "Display Name Chat Color",

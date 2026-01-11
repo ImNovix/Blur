@@ -126,7 +126,7 @@ function injectOptionsMenu(card, userId) {
   btn.className = "user-options-btn blur-user-options";
 
   const img = document.createElement("img");
-  img.src = extensionURL + "src/images/more.png";
+  img.src = extensionURL + "src/images/more.svg";
   img.alt = "Options";
   btn.appendChild(img);
 

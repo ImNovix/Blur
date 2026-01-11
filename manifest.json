@@ -30,7 +30,7 @@
     {
       "resources": [
         "src/**/*.js",
-        "src/images/*.png",
+        "src/images/*.svg",
         "src/images/icons/*.png",
         "src/pages/css/*.css"
       ],

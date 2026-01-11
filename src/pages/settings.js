@@ -5,6 +5,9 @@ const storage = new Storage();
 await storage.initDefaults();
 
 (async () => {
+  if (window.__blurInjected) return;
+  window.__blurInjected = true;
+
   "use strict";
 
   const EXT_KEY = "extension";
@@ -12,7 +15,7 @@ await storage.initDefaults();
 
   let blurRoot = null;
   let blurNav = null;
-  let hasRendered = false; // NEW: ensures the panel renders only once
+  let hasRendered = false; // ensures the panel renders only once
 
   /* -----------------------------
      Utils
@@ -58,6 +61,7 @@ await storage.initDefaults();
     if (!content) return;
     blurRoot = document.createElement("div");
     blurRoot.id = "blur-settings-container";
+    blurRoot.classList.add("blur-root");
     blurRoot.style.display = "none";
     content.appendChild(blurRoot);
   }
@@ -75,26 +79,47 @@ await storage.initDefaults();
   }
 
   /* -----------------------------
-     UI
+     Storage Handlers
   ----------------------------- */
-  function render(tab = "general") {
-    // If we've already rendered, only update tab content and active state
-    if (hasRendered) {
-      const titleEl = blurRoot.querySelector(".container-header h3");
-      const panelEl = blurRoot.querySelector(".section-content");
-      if (titleEl) titleEl.textContent = capitalize(tab);
-      if (panelEl) panelEl.innerHTML = renderPanel(tab);
+  async function attachStorageHandlers() {
+    const elements = blurRoot.querySelectorAll("[data-storage-key]");
 
-      blurRoot.querySelectorAll("[data-tab]").forEach(el => {
-        el.classList.toggle("active", el.dataset.tab === tab);
-      });
-      return;
+    for (const el of elements) {
+      const key = el.dataset.storageKey;
+      if (!key) continue;
+
+      if (el.tagName.toLowerCase() === "button") {
+        const value = await storage.get(key, false);
+        el.classList.toggle("on", value);
+        el.classList.toggle("off", !value);
+
+        el.addEventListener("click", async () => {
+          const newState = !(await storage.get(key, false));
+          await storage.set(key, newState);
+          el.classList.toggle("on", newState);
+          el.classList.toggle("off", !newState);
+        });
+
+      } else if (el.tagName.toLowerCase() === "input") {
+        const value = await storage.get(key, "");
+        el.value = value;
+
+        el.addEventListener("input", async () => {
+          await storage.set(key, el.value);
+        });
+      }
     }
+  }
 
-    hasRendered = true; // mark that we've rendered the panel
+  /* -----------------------------
+     UI Rendering
+  ----------------------------- */
+  async function render(tab = "general") {
     showBlur();
 
-    blurRoot.innerHTML = `
+    if (!hasRendered) {
+      hasRendered = true;
+      blurRoot.innerHTML = `
 <div class="row page-content">
   <div class="blur-settings">
 
@@ -104,7 +129,7 @@ await storage.initDefaults();
       Return to Roblox Settings
     </button>
 
-    <h1 class="container-title">Blur Settings</h1>
+    <h1 class="blur-container-title">Blur Settings</h1>
 
     <div id="settings-container">
       <div class="settings-left-navigation">
@@ -116,10 +141,10 @@ await storage.initDefaults();
       <div class="tab-content rbx-tab-content">
         <div class="tab-pane active">
           <div class="section">
-            <div class="container-header hidden-xs">
+            <div class="blur-container-header hidden-xs">
               <h3>${capitalize(tab)}</h3>
             </div>
-            <div class="section-content">
+            <div class="blur-section-content">
               ${renderPanel(tab)}
             </div>
           </div>
@@ -131,52 +156,31 @@ await storage.initDefaults();
 </div>
 `;
 
-    // Exit button
-    blurRoot.querySelector("#blur-exit").onclick = () => {
-      setQuery(null);
-      route();
-    };
-
-    // Tab buttons
-    blurRoot.querySelectorAll("[data-tab]").forEach(el => {
-      el.onclick = () => {
-        setQuery(el.dataset.tab);
+      // Exit button
+      blurRoot.querySelector("#blur-exit").onclick = () => {
+        setQuery(null);
         route();
       };
-    });
 
-    // Attach toggle and input handlers
-    blurRoot.querySelectorAll("[data-storage-key]").forEach(el => {
-      const key = el.dataset.storageKey;
-      if (!key) return;
+      // Tab buttons
+      blurRoot.querySelectorAll("[data-tab]").forEach(el => {
+        el.onclick = () => {
+          setQuery(el.dataset.tab);
+          route();
+        };
+      });
+    } else {
+      const titleEl = blurRoot.querySelector(".blur-container-header h3");
+      const panelEl = blurRoot.querySelector(".blur-section-content");
+      if (titleEl) titleEl.textContent = capitalize(tab);
+      if (panelEl) panelEl.innerHTML = renderPanel(tab);
 
-      if (el.tagName.toLowerCase() === "button") {
-        // Toggle button
-        (async () => {
-          const value = await storage.get(key, false);
-          el.classList.toggle("on", value);
-          el.classList.toggle("off", !value);
-        })();
+      blurRoot.querySelectorAll("[data-tab]").forEach(el => {
+        el.classList.toggle("active", el.dataset.tab === tab);
+      });
+    }
 
-        el.addEventListener("click", async () => {
-          const newState = !(await storage.get(key, false));
-          await storage.set(key, newState);
-          el.classList.toggle("on", newState);
-          el.classList.toggle("off", !newState);
-        });
-
-      } else if (el.tagName.toLowerCase() === "input") {
-        // Text input
-        (async () => {
-          const value = await storage.get(key, "");
-          el.value = value;
-        })();
-
-        el.addEventListener("input", async () => {
-          await storage.set(key, el.value);
-        });
-      }
-    });
+    await attachStorageHandlers();
   }
 
   function renderTab(name, activeTab) {
@@ -201,39 +205,42 @@ await storage.initDefaults();
   function renderToggle(label, details, storageKey) {
     const formattedDetails = details ? details.replace(/\/n/g, "<br>") : "";
     return `
-      <div class="feature-container section-content">
-        <div class="feature-name-container">
-          <div class="feature-text">
-            <div class="btn-toggle-label">${label}</div>
-            ${formattedDetails ? `<div class="feature-details">${formattedDetails}</div>` : ""}
-          </div>
-          <button type="button" class="btn-toggle feature-component off" data-storage-key="${storageKey}">
-            <span class="toggle-flip"></span>
-            <span class="toggle-on"></span>
-            <span class="toggle-off"></span>
-          </button>
-        </div>
-      </div>
-    `;
+<div class="blur-feature-container blur-section-content">
+  <div class="blur-feature-name-container">
+    <div class="blur-feature-text">
+      <div class="blur-btn-toggle-label">${label}</div>
+      ${formattedDetails ? `<div class="blur-feature-details">${formattedDetails}</div>` : ""}
+    </div>
+    <button type="button" class="btn-toggle feature-component off" data-storage-key="${storageKey}">
+      <span class="toggle-flip"></span>
+      <span class="toggle-on"></span>
+      <span class="toggle-off"></span>
+    </button>
+  </div>
+</div>`;
   }
 
   function renderStringInput(label, details, storageKey) {
     const formattedDetails = details ? details.replace(/\/n/g, "<br>") : "";
     return `
-      <div class="feature-container section-content">
-        <div class="feature-name-container">
-          <div class="feature-text" style="flex: 1;">
-            <div class="btn-toggle-label">${label}</div>
-            ${formattedDetails ? `<div class="feature-details">${formattedDetails}</div>` : ""}
-            <input type="text" data-storage-key="${storageKey}" class="form-control" />
-          </div>
-        </div>
-      </div>
-    `;
+<div class="blur-feature-container blur-section-content">
+  <div class="blur-feature-name-container">
+    <div class="blur-feature-text" style="flex: 1;">
+      <div class="blur-btn-toggle-label">${label}</div>
+      ${formattedDetails ? `<div class="blur-feature-details">${formattedDetails}</div>` : ""}
+      <input type="text" data-storage-key="${storageKey}" class="blur-input form-control" />
+    </div>
+  </div>
+</div>`;
   }
 
   function renderSubLabel(label) {
-    return `<div class="feature-container section-content"><div class="feature-name-container"><div class="sub-label">${label}</div></div></div>`;
+    return `
+<div class="blur-feature-container blur-section-content">
+  <div class="blur-feature-name-container">
+    <div class="blur-sub-label">${label}</div>
+  </div>
+</div>`;
   }
 
   function capitalize(str) {
@@ -269,7 +276,6 @@ await storage.initDefaults();
       route();
     };
 
-    // Never inject active class on the Roblox page button
     a.classList.remove("active");
     a.removeAttribute("aria-current");
 
@@ -280,10 +286,10 @@ await storage.initDefaults();
   /* -----------------------------
      Router
   ----------------------------- */
-  function route() {
+  async function route() {
     const tab = getTab();
     if (tab) {
-      render(tab);
+      await render(tab);
     } else {
       hideBlur();
     }
@@ -293,7 +299,7 @@ await storage.initDefaults();
      Init
   ----------------------------- */
   await injectSidebar();
-  route();
+  await route();
   window.addEventListener("popstate", route);
 
 })();

@@ -252,37 +252,36 @@ window.injectCSS = function (id, cssText) {
 };
 
 function simplePageInjector(pages) {
-  // Sort by specificity
   pages.sort((a, b) => b.url.length - a.url.length);
+
+  const executedPages = new Set();
+
   function matchUrl(pattern) {
-    // Escape regex chars but allow * wildcard
     const regexString = "^" + pattern.replace(${regrex});
     const regex = new RegExp(regexString, "i");
     return regex.test(window.location.href);
   }
+
   async function runPageFeatures() {
     console.log("[runPageFeatures] Checking...");
     for (const page of pages) {
       if (!matchUrl(page.url)) continue;
-      // Inject CSS if defined in config
-      if (page.css) {
-        injectCSS(page.run + "_css", page.css);
-      }
+      if (page.css) injectCSS(page.run + "_css", page.css);
+
       const funcs = Array.isArray(page.run) ? page.run : [page.run];
       for (const fnName of funcs) {
+        if (executedPages.has(fnName)) continue; // skip already run
         if (typeof window[fnName] === "function") {
           console.log("[runPageFeatures] Executing:", fnName);
           try {
             await window[fnName]();
-          } catch (e) {
-            console.error("Error in", fnName, e);
-          }
-        } else {
-          console.warn("Function not found:", fnName);
-        }
+            executedPages.add(fnName);
+          } catch (e) { console.error("Error in", fnName, e); }
+        } else console.warn("Function not found:", fnName);
       }
     }
   }
+
   function hookHistory(onChange) {
     const push = history.pushState;
     const replace = history.replaceState;
@@ -290,6 +289,7 @@ function simplePageInjector(pages) {
     history.replaceState = function (...args) { replace.apply(this, args); onChange(); };
     window.addEventListener("popstate", onChange);
   }
+
   console.log("[simplePageInjector] Init");
   runPageFeatures();
   hookHistory(runPageFeatures);

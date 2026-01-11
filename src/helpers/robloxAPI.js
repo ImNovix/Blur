@@ -144,10 +144,6 @@ export class fetchRoblox {
         return await fetchRobloxAPI("premiumfeatures", `v1/users/${userID}/validate-membership`);
     }
 
-    static async getUserDetailsOpenCloud(userID) {
-        return await fetchOpenCloudAPI(`cloud/v2/users/${userID}`)
-    }
-
     // --- Thumbnails ---
     static async getThumbnailsBatch(jsonReq) {
         return await fetchRobloxAPI("thumbnails", "/v1/batch", {
@@ -381,54 +377,4 @@ async function fetchRobloxAPI(service, path, options = {}) {
     }
 
     throw new Error("Failed to fetch with valid CSRF token");
-}
-
-async function fetchOpenCloudAPI(endpoint, options = {}) {
-    // Build full URL if not a full link
-    const url = endpoint.startsWith("http")
-        ? endpoint
-        : `https://apis.roblox.com/${endpoint.replace(/^\/+/, "")}`;
-
-    const method = (options.method || "GET").toUpperCase();
-    const isWrite = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
-
-    let headers = { ...(options.headers || {}) };
-    let attempt = 0;
-
-    // Pre-seed CSRF for write requests
-    if (isWrite && !headers["X-CSRF-TOKEN"]) {
-        headers["X-CSRF-TOKEN"] = "";
-        headers["Content-Type"] = "application/json";
-    }
-
-    while (attempt < 2) {
-        const response = await fetch(url, {
-            ...options,
-            method,
-            headers,
-            credentials: options.credentials ?? "include",
-        });
-
-        // Refresh CSRF if required
-        if (response.status === 403 && isWrite) {
-            const token = response.headers.get("x-csrf-token");
-            if (token && attempt === 0) {
-                headers["X-CSRF-TOKEN"] = token;
-                attempt++;
-                continue;
-            }
-        }
-
-        if (!response.ok) {
-            const body = await response.text();
-            throw new Error(`[OpenCloud API] ${method} ${url} → ${response.status}\n${body}`);
-        }
-
-        const contentType = response.headers.get("content-type") || "";
-        return contentType.includes("application/json")
-            ? response.json()
-            : response.text();
-    }
-
-    throw new Error("Failed to fetch Open Cloud API with valid CSRF token");
 }

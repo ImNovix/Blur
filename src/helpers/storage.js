@@ -24,7 +24,7 @@ export class Storage {
       
       // Profile
       updateDisplayNameChatColor: true,
-      showMuturalFriends: true,
+      showMutualFriends: true,
       injectCustomCurrenlyWearing: true,
 
       // Experiments
