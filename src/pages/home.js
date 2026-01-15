@@ -391,7 +391,6 @@ async function renameFriendsRow() {
   }
 }
 
-// Initial runs
 //injectUnreleasedVersionPopup(); annoying.
 hideFriendsStatus();
 injectHomeHeader();

@@ -20,6 +20,9 @@ function getProfileUserIdFromUrl() {
     return null;
 }
 
+
+// note to self - new profile header .treatment-redesigned-header
+
 async function updateFriendButton() {
   // Wait for either friend or unfriend button to appear
   const button = await waitForSelector("#friend-button, #unfriend-button");

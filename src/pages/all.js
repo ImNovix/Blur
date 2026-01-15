@@ -11,8 +11,8 @@ await storage.initDefaults();
 // Friend request polling
 // -----------------------------
 async function pollFriendRequests() {
-  const value = storage.get("showNotifactions", false);
-  if (value === true) {
+  const value = await storage.get("showNotifactions", false);
+  if (value) {
     try {
       const res = await fetchRoblox.getFriendRequests();
       if (!res?.data) return;

@@ -1,4 +1,3 @@
-// background.js
 import { fetchRoblox } from "./helpers/robloxAPI.js";
 
 chrome.runtime.onMessage.addListener((msg) => {
@@ -22,10 +21,6 @@ chrome.runtime.onMessage.addListener((msg) => {
       iconUrl: icon,
       title: "Blur - New Friend Request",
       message: `@${username} has added you!`,
-      buttons: [
-        { title: "Accept Request" },
-        { title: "Ignore Request" }
-      ]
     });
   })();
 });

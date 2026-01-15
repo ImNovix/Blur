@@ -1,5 +1,6 @@
 import { Storage } from "../helpers/storage.js";
 import { blurSettingsOptions } from "../constaints/settings.js";
+import { usernameChatColors } from "../constaints/profile.js";
 
 const storage = new Storage();
 await storage.initDefaults();

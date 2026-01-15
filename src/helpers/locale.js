@@ -1,9 +1,3 @@
-/**
- * Formats a Roblox/OpenCloud locale (e.g. "pt-BR", "en-US")
- * into a human-readable language label relative to the viewer.
- *
- * Returns undefined when the locales are equal or invalid.
- */
 export function formatProfileUserLanguage(profileUserLocale) {
   if (!profileUserLocale) return;
 
