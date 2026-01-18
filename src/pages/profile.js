@@ -4,6 +4,8 @@ import { Storage } from "../helpers/storage.js";
 import { formatProfileUserLanguage } from "../helpers/locale.js"
 import { usernameChatColors } from "../constaints/profile.js";
 
+let oldHeader = true;
+
 const storage = new Storage();
 await storage.initDefaults();
 
@@ -19,9 +21,6 @@ function getProfileUserIdFromUrl() {
     if (/^\d+$/.test(last)) return last;
     return null;
 }
-
-
-// note to self - new profile header .treatment-redesigned-header
 
 async function updateFriendButton() {
   // Wait for either friend or unfriend button to appear
@@ -128,6 +127,60 @@ async function addBetterStats() {
     }
 }
 
+async function updateProfileModalStats() {
+    const showUsernameCount = typeof storage !== 'undefined' ? await storage.get('showUsernameCount', true) : true;
+    const showFriendsSince = typeof storage !== 'undefined' ? await storage.get('showFriendsSince', true) : true;
+    let friendsSinceDate;
+    if (showFriendsSince) {
+        friendsSinceDate = await fetchRoblox.getFriendshipDuration(userID);
+    }
+
+    const observer = new MutationObserver(async (mutationsList) => {
+        const profileDialog = document.querySelector('#radix-21');
+        
+        // If modal isn't there, or we already processed THIS specific modal instance, stop.
+        if (!profileDialog || profileDialog.dataset.statsProcessed === "true") return;
+
+        // Mark it immediately so other mutations don't trigger simultaneous fetches
+        profileDialog.dataset.statsProcessed = "true";
+
+        // --- PREVIOUS NAMES COUNT ---
+        if (showUsernameCount) {
+            const namesSpan = profileDialog.querySelector('.group-description-dialog-body-content');
+            const previousNamesHeader = Array.from(profileDialog.querySelectorAll('.group-description-dialog-body-header'))
+                .find(el => el.textContent.includes('Previous names'));
+
+            if (namesSpan && previousNamesHeader) {
+                const namesText = namesSpan.textContent.trim();
+                const count = namesText ? namesText.split(';').length : 0;
+                previousNamesHeader.textContent = `Previous names (${count})`;
+            }
+        }
+
+        // --- FRIENDS SINCE ---
+        if (showFriendsSince) {
+            const statsHeader = Array.from(profileDialog.querySelectorAll('.group-description-dialog-body-header'))
+                .find(el => el.textContent.includes('Statistics'));
+
+            if (statsHeader) {
+                const statsContainer = statsHeader.parentElement;
+
+                    if (friendsSinceDate && friendsSinceDate !== "Unknown") {
+                        const friendsRow = document.createElement('div');
+                        friendsRow.className = 'items-center gap-xsmall flex friends-since-row';
+                        friendsRow.innerHTML = `
+                            <span role="presentation" class="grow-0 shrink-0 basis-auto icon icon-filled-circle-i size-[var(--icon-size-xsmall)]"></span>
+                            <span class="text-body-medium">Friends Since ${friendsSinceDate}</span>
+                        `;
+                        statsContainer.appendChild(friendsRow);
+                    }
+            }
+        }
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+}
+
 async function updateSocialRow() {
     // Rename Connections to Friends
     const value = await storage.get("renameConnectionsToFriends", true);
@@ -161,6 +214,46 @@ async function updateSocialRow() {
                 </a>
             `;
             ul.appendChild(li);
+        }
+    }
+}
+
+async function updateNewSocialRow() {
+    const value = await storage.get("renameConnectionsToFriends", true);
+    if (value) {
+        // Wait for the social row container to exist
+        const socialRowContainer = await waitForSelector('.flex-nowrap.gap-small.flex');
+        if (!socialRowContainer) return;
+
+        // Wait for the "Connections" label to exist and rename it to "Friends"
+        const connectionsLabel = socialRowContainer.querySelector('a[href*="friends"] span.text-no-wrap');
+        if (connectionsLabel && connectionsLabel.textContent.includes('Connections')) {
+            connectionsLabel.textContent = connectionsLabel.textContent.replace('Connections', 'Friends');
+        }
+    }
+
+    // Wait for the "Following" button to exist
+     if (!(Number(userID) === authID)) {
+        const showMuturals = await storage.get('showMutualFriends', true);
+        if (showMuturals) {
+            const followingButton = await waitForSelector('a[href*="following"]');
+            if (!followingButton) return;
+
+            const mutualsRes = await fetchRoblox.getMutualFriends(userID);
+            
+            const mutualsLabel = (mutualsRes.count === 1) ? 'Mutual' : 'Mutuals';
+
+            // Create the mutual friends button
+            const mutualButton = document.createElement('a');
+            mutualButton.href = "#";
+            mutualButton.className = "relative clip group/interactable focus-visible:outline-focus disabled:outline-none cursor-pointer relative flex justify-center items-center radius-circle stroke-none padding-left-medium padding-right-medium height-800 text-label-medium bg-shift-300 content-action-utility";
+            mutualButton.innerHTML = `
+                <div role="presentation" class="absolute inset-[0] transition-colors group-hover/interactable:bg-[var(--color-state-hover)] group-active/interactable:bg-[var(--color-state-press)] group-disabled/interactable:bg-none"></div>
+                <span class="text-no-wrap text-truncate-end">${mutualsRes.count} ${mutualsLabel}</span>
+            `;
+
+            // Insert the mutual button right after the "Following" button
+            socialRowContainer.insertBefore(mutualButton, followingButton.nextElementSibling);
         }
     }
 }
@@ -422,18 +515,18 @@ async function updateDisplayNameChatColor() {
     return usernameChatColors[index];
   };
 
-  // 🔍 Grab the display name element
-  const displayNameEl = document.querySelector(
-    ".profile-header-title-container .MuiTypography-root"
-  );
+    // 🔍 Grab the display name element
+    let displayNameEl;
+    displayNameEl = document.querySelector("#profile-header-title-container-name");
 
-  if (!displayNameEl) return;
+    if (!displayNameEl) return;  // Fallback check in case the element doesn't exist
 
-  displayNameEl.style.setProperty(
+    // Now proceed with the color change logic
+    displayNameEl.style.setProperty(
     "color",
     getUsernameChatColor(name),
     "important"
-  );
+    );
 }
 
 
@@ -444,3 +537,18 @@ injectCurrentlyWearing();
 updateDisplayNameChatColor();
 updateSocialRow();
 addBetterStats();
+
+(async () => {
+    const observer = new MutationObserver((mutationsList, observer) => {
+    const header = document.querySelector('#treatment-redesigned-header');
+    if (header) {
+        console.log('New header detected.');
+        //updateNewSocialRow();
+        updateProfileModalStats();
+
+        observer.disconnect();
+    }
+    });
+    const config = { childList: true, subtree: true };
+    observer.observe(document.body, config);
+})();
